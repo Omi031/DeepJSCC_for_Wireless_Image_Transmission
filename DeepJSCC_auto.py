@@ -1,9 +1,8 @@
 import tensorflow as tf
 from tensorflow.keras import datasets, layers, models, callbacks
 from tensorflow.keras.utils import plot_model
-import Layers
-import Metrics
 import datetime,os
+import Layers, Metrics
 
 
 
