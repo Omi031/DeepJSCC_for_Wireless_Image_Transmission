@@ -4,50 +4,6 @@ from tensorflow.keras import layers
 
 
 
-
-
-# class Modulation(layers.Layer):
-#   def __init__(self, **kwargs):
-#     super(Modulation, self).__init__()
-#   def call(self, x):
-#     # x_shape = tf.shape(x)
-#     # y = np.zeros((int(x_shape[0]), int(x_shape[1]), int(x_shape[2]), int(x.shape[3]/2)))
-#     # y = tf.TensorArray(dtype=tf.complex64, size=int(x.shape[3]/2))
-#     # for i in range(int(x.shape[3]/2)):
-#     #   y_real = x[:,:,:,2*i]
-#     #   y_imag = x[:,:,:,2*i+1]
-#     #   y.write(i, tf.complex(y_real, y_imag))
-#     # y = y.stack()
-#     # print(tf.shape(y))
-#     # print(y.shape)
-#     # y = tf.transpose(y, perm=[1,2,3,0])
-#     # tf.print(tf.shape(y))
-#     # print(y.shape)
-
-#     y_real = tf.cast(x[:,:,:,0::2], tf.complex128)
-#     y_imag = tf.cast(x[:,:,:,1::2], tf.complex128)
-
-#     # y = tf.complex(y_real, y_imag)
-#     y = y_real + tf.multiply(1j, y_imag)
-
-#     return y
-  
-# class Demodulation(layers.Layer):
-#   def __init__(self, **kwargs):
-#     super(Demodulation, self).__init__()
-#   def call(self, x):
-#     y = tf.TensorArray(dtype=tf.float32, size=int(x.shape[3]*2))
-#     y_real = x.real
-#     y_imag = x.imag
-#     for i in range(int(x.shape[3]*2)):
-#       y.write(2*i, y_real[:,:,:,i])
-#       y.write(2*i+1, y_imag[:,:,:,i])
-#     y = y.stack()
-#     y = tf.transpose(y, perm=[1,2,3,0])
-#     tf.print(tf.shape(y))
-#     print(y.shape)
-#     return y
-
 class Normalization(layers.Layer):
   def __init__(self, k, P, **kwargs):
     super(Normalization, self).__init__()
@@ -70,6 +26,79 @@ class Normalization(layers.Layer):
   @classmethod
   def from_config(cls, config):
     return cls(**config)
+
+
+
+class AWGN_Channel(layers.Layer):
+  def __init__(self, N, **kwargs):
+    super(AWGN_Channel, self).__init__()
+    self.stddev = np.sqrt(N)
+  def call(self, x):
+    with tf.name_scope('AWGN_Channel'):
+      noise = tf.random.normal(tf.shape(x), mean=0.0, stddev=self.stddev, dtype=tf.float32)
+      y = x + noise
+    return y
+  def get_config(self):
+        config = super(AWGN_Channel, self).get_config()
+        config.update({
+          'N': self.stddev
+        })
+        return config
+  @classmethod
+  def from_config(cls, config):
+    return cls(**config)
+
+
+
+class Slow_Rayleigh_Fading_Channel(layers.Layer):
+  def __init__(self, **kwargs):
+    super(Slow_Rayleigh_Fading_Channel, self).__init__()
+  def random_normal(self):
+    return tf.random.normal([1, 1], mean=0.0, stddev=1.0, dtype=tf.float32)
+  
+  @tf.function
+  def call(self, x):
+    with tf.name_scope('Slow_Rayleigh_Fading_Channel'):
+      x_shape = tf.shape(x)
+      x_shape = tf.cast(x_shape, dtype='int32')
+      x_real = x[:,:,:,0::2]
+      x_imag = x[:,:,:,1::2]
+      x_c = tf.complex(x_real, x_imag)
+      x_c = tf.keras.backend.eval(x_c)
+      y_c = []
+      # for i in range(tf.shape(x_c)[0]):
+      #   h = tf.complex(self.random_normal(), self.random_normal())
+      #   y_c.append(h*x_c[i])
+      for x_c_0 in x_c:
+        h = tf.complex(self.random_normal(), self.random_normal())
+        y_c.append(h*x_c_0)
+      y_c = tf.convert_to_tensor(y_c)
+      print(y_c.shape)
+      y = tf.TensorArray(dtype=tf.float32, size=int(x.shape[3]))
+
+      y_real = tf.math.real(y_c)
+      y_imag = tf.math.imag(y_c)
+      for i in range(y_c.shape[3]):
+        y = y.write(2*i, y_real[:,:,:,i])
+        y = y.write(2*i+1, y_imag[:,:,:,i])
+      y = y.stack()
+      y = tf.transpose(y, perm=[1,2,3,0])
+
+
+    return y
+  @classmethod
+  def from_config(cls, config):
+    return cls(**config)
+
+
+# class Slow_Rayleigh_Fading_Channel(layers.Layer):
+#   def __init__(self, **kwargs):
+#     super(Slow_Rayleigh_Fading_Channel, self).__init__()
+#   def call(self, x, **kwargs):
+#     with tf.name_scope('Flat_Fasing_Channel'):
+#       H = tf.random.normal(tf.shape(1), mean=0.0, stddev=1.0, dtype=tf.float32)
+#       z = H*x
+#     return z
 
 # class Normalization(layers.Layer):
 #   def __init__(self, k, P, **kwargs):
@@ -159,61 +188,45 @@ class Normalization(layers.Layer):
 #     })
 #     return config
 
-class AWGN_Channel(layers.Layer):
-  def __init__(self, N, **kwargs):
-    super(AWGN_Channel, self).__init__()
-    self.stddev = np.sqrt(N)
-  def call(self, x):
-    with tf.name_scope('AWGN_Channel'):
-      noise = tf.random.normal(tf.shape(x), mean=0.0, stddev=self.stddev, dtype=tf.float32)
-      y = x + noise
-    return y
-  def get_config(self):
-        config = super(AWGN_Channel, self).get_config()
-        config.update({
-          'N': self.stddev
-        })
-        return config
-  @classmethod
-  def from_config(cls, config):
-    return cls(**config)
 
-
-
-class Slow_Rayleigh_Fading_Channel(layers.Layer):
-  def __init__(self, **kwargs):
-    super(Slow_Rayleigh_Fading_Channel, self).__init__()
-  def random_normal(self):
-    return tf.random.normal([1, 1], mean=0.0, stddev=1.0, dtype=tf.float32)
-  def call(self, x):
-    with tf.name_scope('Slow_Rayleigh_Fading_Channel'):
-      x_real = x[:,:,:,0::2]
-      x_imag = x[:,:,:,1::2]
-      x_c = tf.complex(x_real, x_imag)
-      h =  tf.complex(self.random_normal(), self.random_normal())
-      y_c = h*x_c
-      y = tf.TensorArray(dtype=tf.float32, size=int(x.shape[3]))
-    
-      y_real = tf.math.real(y_c)
-      y_imag = tf.math.imag(y_c)
-      for i in range(y_c.shape[3]):
-        y = y.write(2*i, y_real[:,:,:,i])
-        y = y.write(2*i+1, y_imag[:,:,:,i])
-      y = y.stack()
-      y = tf.transpose(y, perm=[1,2,3,0])
-
-
-    return y
-  @classmethod
-  def from_config(cls, config):
-    return cls(**config)
-
-
-# class Slow_Rayleigh_Fading_Channel(layers.Layer):
+# class Modulation(layers.Layer):
 #   def __init__(self, **kwargs):
-#     super(Slow_Rayleigh_Fading_Channel, self).__init__()
-#   def call(self, x, **kwargs):
-#     with tf.name_scope('Flat_Fasing_Channel'):
-#       H = tf.random.normal(tf.shape(1), mean=0.0, stddev=1.0, dtype=tf.float32)
-#       z = H*x
-#     return z
+#     super(Modulation, self).__init__()
+#   def call(self, x):
+#     # x_shape = tf.shape(x)
+#     # y = np.zeros((int(x_shape[0]), int(x_shape[1]), int(x_shape[2]), int(x.shape[3]/2)))
+#     # y = tf.TensorArray(dtype=tf.complex64, size=int(x.shape[3]/2))
+#     # for i in range(int(x.shape[3]/2)):
+#     #   y_real = x[:,:,:,2*i]
+#     #   y_imag = x[:,:,:,2*i+1]
+#     #   y.write(i, tf.complex(y_real, y_imag))
+#     # y = y.stack()
+#     # print(tf.shape(y))
+#     # print(y.shape)
+#     # y = tf.transpose(y, perm=[1,2,3,0])
+#     # tf.print(tf.shape(y))
+#     # print(y.shape)
+
+#     y_real = tf.cast(x[:,:,:,0::2], tf.complex128)
+#     y_imag = tf.cast(x[:,:,:,1::2], tf.complex128)
+
+#     # y = tf.complex(y_real, y_imag)
+#     y = y_real + tf.multiply(1j, y_imag)
+
+#     return y
+  
+# class Demodulation(layers.Layer):
+#   def __init__(self, **kwargs):
+#     super(Demodulation, self).__init__()
+#   def call(self, x):
+#     y = tf.TensorArray(dtype=tf.float32, size=int(x.shape[3]*2))
+#     y_real = x.real
+#     y_imag = x.imag
+#     for i in range(int(x.shape[3]*2)):
+#       y.write(2*i, y_real[:,:,:,i])
+#       y.write(2*i+1, y_imag[:,:,:,i])
+#     y = y.stack()
+#     y = tf.transpose(y, perm=[1,2,3,0])
+#     tf.print(tf.shape(y))
+#     print(y.shape)
+#     return y
