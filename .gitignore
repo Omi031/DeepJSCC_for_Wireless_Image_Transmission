@@ -2,3 +2,5 @@
 **/__pycache__/**
 model/
 visualization/
+images/
+CIFAR10_JPEG/
