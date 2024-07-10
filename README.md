@@ -1,14 +1,3 @@
-<script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
-</script>
-<script type="text/x-mathjax-config">
- MathJax.Hub.Config({
- tex2jax: {
- inlineMath: [['$', '$'] ],
- displayMath: [ ['$$','$$'], ["\\[","\\]"] ]
- }
- });
-</script>
-
 # Deep Joint Source-Channel Coding for Wireless Image Transmission
 
 ## JPEG.py, JPEG2000.py
@@ -16,7 +5,7 @@
 #### AWGNチャネル
 前提として、CIFAR-10データセット（$32\times32\times3$のRGB画像）より10000枚の画像をJPEG、またはJPEG2000方式で圧縮して送信することを考える。圧縮率は帯域圧縮率$k/n$で定義する。
 
-任意の帯域圧縮率におけるソースサンプル当たりのビット数$R_{\rm max}$を以下のように定義する。
+任意の帯域圧縮率におけるソースサンプル当たりのビット数$`R_{\rm max}`$を以下のように定義する。
 $$\displaystyle R_{\rm max}=\frac{k}{n}C\quad{\rm where}\quad C=\log_2(1+\rm SNR)$$
 
 CIFAR-10データの各画素値は[0,255]で8bitであるので、1枚の画像のデータサイズは$32\times32\times3\times8=24,576{\rm bit}=3,072{\rm Byte}$となる。
