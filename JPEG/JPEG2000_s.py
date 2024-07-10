@@ -35,13 +35,14 @@ org_img = org_img[:100]
 psnr_avg_list = []
 n = org_img[0].size
 k_n_list = [0.04, 0.08, 0.16, 0.25, 0.33, 0.42, 0.48]
-SNR = 10
+SNR_dB = 20
+SNR = 10**(SNR_dB/10)
 C = np.log2(1+SNR)
 # quality = np.arange(0, 1001, 1)
 
 for k_n in k_n_list:
   R_max = k_n*C
-  data_size_max = n*R_max/8*1.8
+  data_size_max = n*R_max/8
   psnr = []
 
   for img in tqdm.tqdm(org_img):
@@ -69,18 +70,18 @@ for k_n in k_n_list:
 
 # 結果表示
 k_n_list_c = [0.04, 0.08, 0.16, 0.25, 0.33, 0.42, 0.48]
-if SNR == 0:
+if SNR_dB == 0:
   psnr_avg_list_c = [14, 14, 14, 14, 14, 14, 14]
-elif SNR == 10:
+elif SNR_dB == 10:
   psnr_avg_list_c = [14, 14, 17, 26, 30, 33, 35]
-elif SNR == 20:
+elif SNR_dB == 20:
   psnr_avg_list_c = [14, 16, 30, 35, 41, 41, 46]
 else:
   psnr_avg_list_c = np.zeros(k_n_list_c.size)
 
 
 fig = plt.figure(figsize=(7,5))
-axes = fig.add_subplot(1,1,1, title=f'JPEG2000 SNR={SNR}dB', xlabel='k/n', ylabel='PSNR(dB)')
+axes = fig.add_subplot(1,1,1, title=f'JPEG2000 SNR={SNR_dB}dB', xlabel='k/n', ylabel='PSNR(dB)')
 
 axes.plot(k_n_list_c, psnr_avg_list_c, '-', marker='o')
 axes.plot(k_n_list, psnr_avg_list, '-', marker='o')

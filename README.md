@@ -1,6 +1,18 @@
 # Deep Joint Source-Channel Coding for Wireless Image Transmission
 
-## JPEG.py, JPEG2000.py
+## プログラムの説明
+- JPEG.py
+  JPEG圧縮
+- JPEG2000.py
+  JPEG2000圧縮
+- JPEG2000_s.py
+  JPEG2000.pyの高速処理版
+- DeepJSCC_auot.py
+  DeepJSCCの実行
+- DeepJSCC_visualization.py
+  DeepJSCCで再構成した画像の可視化
+
+## JPEG.py JPEG2000.py
 ### JPEG圧縮の考え方
 #### AWGNチャネル
 前提として、CIFAR-10データセット（$`32\times32\times3`$のRGB画像）より10000枚の画像をJPEG、またはJPEG2000方式で圧縮して送信することを考える。圧縮率は帯域圧縮率$`k/n`$で定義する。
@@ -26,6 +38,3 @@ OpenCVを用いて```quality```（0～100の範囲、値が小さいほど圧縮
 ![JPEG compression](fig/jpeg_compression.png)
 
 なお、すべての```quality```で$`S_{\rm comp}`$を満たさない場合は、JPEG圧縮不可能と考え、各色チャネルの全画素を平均して画像を再構成する。このときのPSNRは15dB弱くらいになる。
-
-## JPEG2000_s.py
-JEPG2000.pyの高速処理版。
