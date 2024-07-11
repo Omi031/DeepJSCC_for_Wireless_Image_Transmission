@@ -7,7 +7,7 @@
   JPEG2000圧縮
 - JPEG2000_s.py
   JPEG2000.pyの高速処理版
-- DeepJSCC_auot.py
+- DeepJSCC_auto.py
   DeepJSCCの実行
 - DeepJSCC_visualization.py
   DeepJSCCで再構成した画像の可視化
@@ -38,3 +38,20 @@ OpenCVを用いて```quality```（0～100の範囲、値が小さいほど圧縮
 ![JPEG compression](fig/jpeg_compression.png)
 
 なお、すべての```quality```で$`S_{\rm comp}`$を満たさない場合は、JPEG圧縮不可能と考え、各色チャネルの全画素を平均して画像を再構成する。このときのPSNRは15dB弱くらいになる。
+
+### 参考
+- [メモリ上への一時ファイルの作り方](https://qiita.com/mimaburao/items/26e1463feb6397197232)
+- [CIFAR-10：物体カラー写真（乗り物や動物など）の画像データセット](https://atmarkit.itmedia.co.jp/ait/articles/2006/10/news021.html)
+- [openCVで読み込んだ画像をmatplotlibで表示する方法](https://qiita.com/YosukeHoshi/items/189c615187f41f2f4e27)
+- [PILを用いた画像圧縮(jpeg, jpeg2000)](https://jskangaroo.hatenablog.com/entry/2020/03/02/174023)
+- [cv2.imwrite](https://www.codevace.com/py-opencv-save-image/)
+- [OpenCVのimencodeとimdecodeでのbytesのやりとり](https://note.com/lizefield/n/nbd553366d55e)
+- [OpenCV imread mode 指定](https://qiita.com/yoya/items/b2fab73698d7aa35f5a7)
+- [JPEGのExif情報をとっかかりにバイナリデータと戯れる](https://beyondjapan.com/blog/2016/11/start-binary-reading-with-jpeg-exif/)
+- [Python で JPG ファイルから Exif 情報を削除する](https://note.com/junf/n/n553d4a9a99c3)
+- [JPEG2000詳細解説](https://www.cqpub.co.jp/hanbai/books/18/18721/18721_1syo.pdf)
+
+## DeepJSCC_auto.py
+
+### 参考
+- [DJSCC-for-Wireless-Image-Transmission](https://github.com/irdanish11/DJSCC-for-Wireless-Image-Transmission)

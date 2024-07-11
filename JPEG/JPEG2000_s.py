@@ -35,14 +35,14 @@ org_img = org_img[:100]
 psnr_avg_list = []
 n = org_img[0].size
 k_n_list = [0.04, 0.08, 0.16, 0.25, 0.33, 0.42, 0.48]
-SNR_dB = 20
+SNR_dB = 10
 SNR = 10**(SNR_dB/10)
 C = np.log2(1+SNR)
 # quality = np.arange(0, 1001, 1)
 
 for k_n in k_n_list:
   R_max = k_n*C
-  data_size_max = n*R_max/8
+  data_size_max = n*R_max/8*1.8
   psnr = []
 
   for img in tqdm.tqdm(org_img):
@@ -61,12 +61,14 @@ for k_n in k_n_list:
             data_size_old = data_size_new
           break
       data_size_old = data_size_new
-    psnr.append(peak_signal_noise_ratio(img, jpeg, data_range=255))
+    p = peak_signal_noise_ratio(img, jpeg, data_range=255)
+    if p != float('inf'):
+      psnr.append(p)
 
   psnr_avg = np.mean(psnr)
   psnr_avg_list.append(psnr_avg)
 
-  print(f'k/n={k_n}, data_size={data_size_max}Bytes, PSNR={psnr_avg}')
+  print(f'k/n={k_n}, data_size={data_size_max}Bytes, PSNR={psnr_avg}, inf:{len(org_img)-len(psnr)}')
 
 # 結果表示
 k_n_list_c = [0.04, 0.08, 0.16, 0.25, 0.33, 0.42, 0.48]
