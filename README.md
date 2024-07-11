@@ -54,7 +54,7 @@ JPEG.pyの実行結果を示す。なお、論文値については論文中の�
 
 JPEGについて圧縮後の画像を可視化してみた。
 
-<img src="fig/jpeg_visualization.png" width="800">
+<img src="fig/jpeg_visualization.png">
 
 ### 参考
 - [メモリ上への一時ファイルの作り方](https://qiita.com/mimaburao/items/26e1463feb6397197232)
