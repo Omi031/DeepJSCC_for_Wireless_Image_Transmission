@@ -52,6 +52,10 @@ JPEG.pyの実行結果を示す。なお、論文値については論文中の�
 
 図を見ればわかるが、JPEG2000ではPSNRが論文値と一致しない。
 
+JPEGについて圧縮後の画像を可視化してみた。
+
+<img src="fig/jpeg_visualization.png" width="800">
+
 ### 参考
 - [メモリ上への一時ファイルの作り方](https://qiita.com/mimaburao/items/26e1463feb6397197232)
 - [CIFAR-10：物体カラー写真（乗り物や動物など）の画像データセット](https://atmarkit.itmedia.co.jp/ait/articles/2006/10/news021.html)
