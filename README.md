@@ -32,27 +32,23 @@ $$\displaystyle S_{\rm comp}=32\times32\times3\times R_{\rm max}=3072R_{\rm max}
 
 ### 実装
 #### AWGNチャネル
-OpenCVを用いて```quality```（0～100の範囲、値が小さいほど圧縮率が高い）を指定して任意の圧縮率でJPEG圧縮を行う。
-```cv2.imencode('.jpg', img, [int(cv2.IMWRITE_JPEG_QUALITY), quality])```
+OpenCVを用いて```quality```（JPEG：0～100、JEPG2000：0～1000の範囲、値が小さいほど圧縮率が高い）を指定して任意の圧縮率でJPEG圧縮を行う。
+JEPG：```cv2.imencode('.jpg', img, [int(cv2.IMWRITE_JPEG_QUALITY), quality])```
+JPEG2000：`cv2.imencode('.jp2', img, (cv2.IMWRITE_JPEG2000_COMPRESSION_X1000, quality))`
 
-なお、```quality```と圧縮画像のデータサイズの関係性がよくわからなかったので、全ての```quality```について一度圧縮を行い、$`S_{\rm comp}`$を満たす圧縮画像と元画像を比較することにした。
-ちなみに```quality```と圧縮画像のデータサイズの関係性をグラフ化すると下図の通り。
+なお、```quality```と圧縮画像のデータサイズの関係性がよくわからなかったので、全ての```quality```について一度圧縮を行い、$`S_{\rm comp}`$を満たす圧縮画像と元画像を比較することにした。ちなみに```quality```と圧縮画像のデータサイズの関係性をグラフ化すると下図の通り。なお、$`\rm SNR=20dB`$のときの$`S_{\rm comp}`$について破線で示す。
 
-<img src="fig/jpeg_compression.png" width="400">
+<img src="fig/jpeg_compression.png" width="800">
 
-なお、すべての```quality```で$`S_{\rm comp}`$を満たさない場合は、JPEG圧縮不可能と考え、各色チャネルの全画素を平均して画像を再構成する。このときのPSNRは15dB弱くらいになる。
+なお、すべての```quality```で$`S_{\rm comp}`$を満たさない場合は（グラフ中ではk/n=0.05のとき）、JPEG圧縮不可能と考え、各色チャネルの全画素を平均して画像を再構成する。このときのPSNRは15dB弱くらいになる。
 
 ### 結果
 #### AWGNチャネル
 JPEG.pyの実行結果を示す。なお、論文値については論文中のグラフから目視で読み取ったものなので目安程度に。
 
-<img src="fig/graph_JPEG_SNR0.png" width="400">
-<img src="fig/graph_JPEG_SNR10.png" width="400">
-<img src="fig/graph_JPEG_SNR20.png" width="400">
+<img src="fig/graph_JPEG_SNR0.png" width="400"><img src="fig/graph_JPEG_SNR10.png" width="400"><img src="fig/graph_JPEG_SNR20.png" width="400">
 
-<img src="fig/graph_JPEG2000_SNR0.png" width="400">
-<img src="fig/graph_JPEG2000_SNR10.png" width="400">
-<img src="fig/graph_JPEG2000_SNR20.png" width="400">
+<img src="fig/graph_JPEG2000_SNR0.png" width="400"><img src="fig/graph_JPEG2000_SNR10.png" width="400"><img src="fig/graph_JPEG2000_SNR20.png" width="400">
 
 図を見ればわかるが、JPEG2000ではPSNRが論文値と一致しない。
 

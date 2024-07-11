@@ -42,7 +42,7 @@ C = np.log2(1+SNR)
 
 for k_n in k_n_list:
   R_max = k_n*C
-  data_size_max = n*R_max/8*1.8
+  data_size_max = n*R_max/8
   psnr = []
 
   for img in tqdm.tqdm(org_img):
