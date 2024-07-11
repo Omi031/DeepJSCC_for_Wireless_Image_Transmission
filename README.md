@@ -9,6 +9,8 @@
   JPEG2000圧縮
 - JPEG2000_s.py
   JPEG2000.pyの高速処理版
+- JPEG*_visualization.py
+  圧縮画像の可視化
 - DeepJSCC_auto.py
   DeepJSCCの実行
 - DeepJSCC_visualization.py
