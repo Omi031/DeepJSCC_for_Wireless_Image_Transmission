@@ -1,4 +1,6 @@
 # Deep Joint Source-Channel Coding for Wireless Image Transmission
+論文「[Deep Joint Source-Channel Coding for Wireless Image Transmission](https://ieeexplore.ieee.org/document/10328187)」について実装してみた。
+
 
 ## プログラムの説明
 - JPEG.py
@@ -35,9 +37,16 @@ OpenCVを用いて```quality```（0～100の範囲、値が小さいほど圧縮
 
 なお、```quality```と圧縮画像のデータサイズの関係性がよくわからなかったので、全ての```quality```について一度圧縮を行い、$`S_{\rm comp}`$を満たす圧縮画像と元画像を比較することにした。
 ちなみに```quality```と圧縮画像のデータサイズの関係性をグラフ化すると下図の通り。
+
 ![JPEG compression](fig/jpeg_compression.png)
 
 なお、すべての```quality```で$`S_{\rm comp}`$を満たさない場合は、JPEG圧縮不可能と考え、各色チャネルの全画素を平均して画像を再構成する。このときのPSNRは15dB弱くらいになる。
+
+### 結果
+#### AWGNチャネル
+JPEG.pyの実行結果を示す。なお、論文値については論文中のグラフから目視で読み取ったものなので目安程度に。
+
+![JPEG SNR=0dB](fig/graph_JPEG_SNR0.png "abcd")
 
 ### 参考
 - [メモリ上への一時ファイルの作り方](https://qiita.com/mimaburao/items/26e1463feb6397197232)
