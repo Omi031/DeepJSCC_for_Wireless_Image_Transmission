@@ -46,7 +46,10 @@ OpenCVを用いて```quality```（0～100の範囲、値が小さいほど圧縮
 #### AWGNチャネル
 JPEG.pyの実行結果を示す。なお、論文値については論文中のグラフから目視で読み取ったものなので目安程度に。
 
-![JPEG SNR=0dB](fig/graph_JPEG_SNR0.png "abcd")
+<img src="fig/graph_JPEG_SNR0.png" width="400"><img src="fig/graph_JPEG_SNR10.png" width="400"><img src="fig/graph_JPEG_SNR20.png" width="400">
+<img src="fig/graph_JPEG2000_SNR0.png" width="400"><img src="fig/graph_JPEG2000_SNR10.png" width="400"><img src="fig/graph_JPEG2000_SNR20.png" width="400">
+
+図を見ればわかるが、JPEG2000ではPSNRが論文値と一致しない。
 
 ### 参考
 - [メモリ上への一時ファイルの作り方](https://qiita.com/mimaburao/items/26e1463feb6397197232)
