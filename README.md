@@ -38,7 +38,7 @@ OpenCVを用いて```quality```（0～100の範囲、値が小さいほど圧縮
 なお、```quality```と圧縮画像のデータサイズの関係性がよくわからなかったので、全ての```quality```について一度圧縮を行い、$`S_{\rm comp}`$を満たす圧縮画像と元画像を比較することにした。
 ちなみに```quality```と圧縮画像のデータサイズの関係性をグラフ化すると下図の通り。
 
-![JPEG compression](fig/jpeg_compression.png)
+<img src="fig/jpeg_compression.png" width="400">
 
 なお、すべての```quality```で$`S_{\rm comp}`$を満たさない場合は、JPEG圧縮不可能と考え、各色チャネルの全画素を平均して画像を再構成する。このときのPSNRは15dB弱くらいになる。
 
@@ -46,8 +46,13 @@ OpenCVを用いて```quality```（0～100の範囲、値が小さいほど圧縮
 #### AWGNチャネル
 JPEG.pyの実行結果を示す。なお、論文値については論文中のグラフから目視で読み取ったものなので目安程度に。
 
-<img src="fig/graph_JPEG_SNR0.png" width="400"><img src="fig/graph_JPEG_SNR10.png" width="400"><img src="fig/graph_JPEG_SNR20.png" width="400">
-<img src="fig/graph_JPEG2000_SNR0.png" width="400"><img src="fig/graph_JPEG2000_SNR10.png" width="400"><img src="fig/graph_JPEG2000_SNR20.png" width="400">
+<img src="fig/graph_JPEG_SNR0.png" width="400">
+<img src="fig/graph_JPEG_SNR10.png" width="400">
+<img src="fig/graph_JPEG_SNR20.png" width="400">
+
+<img src="fig/graph_JPEG2000_SNR0.png" width="400">
+<img src="fig/graph_JPEG2000_SNR10.png" width="400">
+<img src="fig/graph_JPEG2000_SNR20.png" width="400">
 
 図を見ればわかるが、JPEG2000ではPSNRが論文値と一致しない。
 
