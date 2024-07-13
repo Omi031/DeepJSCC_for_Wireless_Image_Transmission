@@ -74,5 +74,11 @@ SNR=20dBのときについて、圧縮後の画像を可視化してみた。
 
 ## DeepJSCC_auto.py
 
+<img src="fig/architecture.png" width="400">
+
+DeepJSCCの構成を図に示す。
+
+
+
 ### 参考
 - [DJSCC-for-Wireless-Image-Transmission](https://github.com/irdanish11/DJSCC-for-Wireless-Image-Transmission)
