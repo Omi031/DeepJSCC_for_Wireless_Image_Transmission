@@ -35,7 +35,9 @@ $$\displaystyle S_{\rm comp}=32\times32\times3\times R_{\rm max}=3072R_{\rm max}
 ### 実装
 #### AWGNチャネル
 OpenCVを用いて```quality```（JPEG：0～100、JEPG2000：0～1000の範囲、値が小さいほど圧縮率が高い）を指定して任意の圧縮率でJPEG圧縮を行う。
+
 JEPG：```cv2.imencode('.jpg', img, [int(cv2.IMWRITE_JPEG_QUALITY), quality])```
+
 JPEG2000：`cv2.imencode('.jp2', img, (cv2.IMWRITE_JPEG2000_COMPRESSION_X1000, quality))`
 
 なお、```quality```と圧縮画像のデータサイズの関係性がよくわからなかったので、全ての```quality```について一度圧縮を行い、$`S_{\rm comp}`$を満たす圧縮画像と元画像を比較することにした。ちなみに```quality```と圧縮画像のデータサイズの関係性をグラフ化すると下図の通り。なお、$`\rm SNR=20dB`$のときの$`S_{\rm comp}`$について破線で示す。
@@ -74,11 +76,14 @@ SNR=20dBのときについて、圧縮後の画像を可視化してみた。
 
 ## DeepJSCC_auto.py
 
+<<<<<<< HEAD
 <img src="fig/architecture.png" width="400">
 
 DeepJSCCの構成を図に示す。
 
 
+=======
+>>>>>>> fbea25edbb22537f465fe23ff58c5450a11b4a8c
 
 ### 参考
 - [DJSCC-for-Wireless-Image-Transmission](https://github.com/irdanish11/DJSCC-for-Wireless-Image-Transmission)
