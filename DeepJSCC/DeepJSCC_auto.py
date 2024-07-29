@@ -18,9 +18,9 @@ test_images = test_images[:10000]
 slow_rayleigh_fading = True
 
 # train epoch
-epochs = 10
+epochs = 1
 # SNR[dB]
-SNR_list = [0]
+SNR_list = [10]
 x_list = [8]
 
 times = len(SNR_list)*len(x_list)
@@ -36,8 +36,9 @@ n = 32*32*3
 
 
 
-for i, SNR in enumerate(SNR_list):
+for i, SNR_dB in enumerate(SNR_list):
   # noise power
+  SNR = 10**(SNR_dB/10)
   N = P/10**(SNR/10)
   for j, x in enumerate(x_list):
     # bandwidth compression ratio
@@ -87,8 +88,8 @@ for i, SNR in enumerate(SNR_list):
     model.add(layers.PReLU(name='Decoder_PReLU_4'))
     model.add(layers.Conv2DTranspose(3, (5, 5), strides=2, padding='same',  activation='sigmoid', name='Decoder_TransConv2D_5'))
 
-    model.summary()
-    plot_model(model, show_shapes=True)
+    # model.summary()
+    # plot_model(model, show_shapes=True)
 
     if slow_rayleigh_fading == True:
       file_name = f'model_SRayleigh_{SNR}dB_k_n{round(k_n, 2)}_x{x}_epoch{epochs}'

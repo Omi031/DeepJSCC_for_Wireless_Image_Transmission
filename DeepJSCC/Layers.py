@@ -3,7 +3,6 @@ import tensorflow as tf
 from tensorflow.keras import layers
 
 
-
 class Normalization(layers.Layer):
   def __init__(self, k, P, **kwargs):
     super(Normalization, self).__init__()
@@ -48,47 +47,63 @@ class AWGN_Channel(layers.Layer):
   def from_config(cls, config):
     return cls(**config)
 
-
-
 class Slow_Rayleigh_Fading_Channel(layers.Layer):
   def __init__(self, **kwargs):
     super(Slow_Rayleigh_Fading_Channel, self).__init__()
   def random_normal(self):
     return tf.random.normal([1, 1], mean=0.0, stddev=1.0, dtype=tf.float32)
-  
-  @tf.function
   def call(self, x):
     with tf.name_scope('Slow_Rayleigh_Fading_Channel'):
-      x_shape = tf.shape(x)
-      x_shape = tf.cast(x_shape, dtype='int32')
-      x_real = x[:,:,:,0::2]
-      x_imag = x[:,:,:,1::2]
-      x_c = tf.complex(x_real, x_imag)
-      x_c = tf.keras.backend.eval(x_c)
-      y_c = []
-      # for i in range(tf.shape(x_c)[0]):
-      #   h = tf.complex(self.random_normal(), self.random_normal())
-      #   y_c.append(h*x_c[i])
-      for x_c_0 in x_c:
-        h = tf.complex(self.random_normal(), self.random_normal())
-        y_c.append(h*x_c_0)
-      y_c = tf.convert_to_tensor(y_c)
-      print(y_c.shape)
-      y = tf.TensorArray(dtype=tf.float32, size=int(x.shape[3]))
-
-      y_real = tf.math.real(y_c)
-      y_imag = tf.math.imag(y_c)
-      for i in range(y_c.shape[3]):
-        y = y.write(2*i, y_real[:,:,:,i])
-        y = y.write(2*i+1, y_imag[:,:,:,i])
-      y = y.stack()
-      y = tf.transpose(y, perm=[1,2,3,0])
-
-
+      h_r = self.random_normal()
+      h_i = self.random_normal()
+      half = int(x.shape[3]/2)
+      x_f = h_r*x[:,:,:,:half] - h_i*x[:,:,:,half:]
+      x_s = h_i*x[:,:,:,:half] + h_r*x[:,:,:,half:]
+      y = tf.concat([x_f, x_s], axis=-1)
     return y
   @classmethod
   def from_config(cls, config):
     return cls(**config)
+
+# class Slow_Rayleigh_Fading_Channel(layers.Layer):
+#   def __init__(self, **kwargs):
+#     super(Slow_Rayleigh_Fading_Channel, self).__init__()
+#   def random_normal(self):
+#     return tf.random.normal([1, 1], mean=0.0, stddev=1.0, dtype=tf.float32)
+  
+#   @tf.function
+#   def call(self, x):
+#     with tf.name_scope('Slow_Rayleigh_Fading_Channel'):
+#       x_shape = tf.shape(x)
+#       x_shape = tf.cast(x_shape, dtype='int32')
+#       x_real = x[:,:,:,0::2]
+#       x_imag = x[:,:,:,1::2]
+#       x_c = tf.complex(x_real, x_imag)
+#       x_c = tf.keras.backend.eval(x_c)
+#       y_c = []
+#       # for i in range(tf.shape(x_c)[0]):
+#       #   h = tf.complex(self.random_normal(), self.random_normal())
+#       #   y_c.append(h*x_c[i])
+#       for x_c_0 in x_c:
+#         h = tf.complex(self.random_normal(), self.random_normal())
+#         y_c.append(h*x_c_0)
+#       y_c = tf.convert_to_tensor(y_c)
+#       print(y_c.shape)
+#       y = tf.TensorArray(dtype=tf.float32, size=int(x.shape[3]))
+
+#       y_real = tf.math.real(y_c)
+#       y_imag = tf.math.imag(y_c)
+#       for i in range(y_c.shape[3]):
+#         y = y.write(2*i, y_real[:,:,:,i])
+#         y = y.write(2*i+1, y_imag[:,:,:,i])
+#       y = y.stack()
+#       y = tf.transpose(y, perm=[1,2,3,0])
+
+
+#     return y
+#   @classmethod
+#   def from_config(cls, config):
+#     return cls(**config)
 
 
 # class Slow_Rayleigh_Fading_Channel(layers.Layer):
