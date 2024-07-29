@@ -4,8 +4,6 @@ from tensorflow.keras.utils import plot_model
 import datetime,os
 import Layers, Metrics
 
-
-
 # load data
 (train_images, _), (test_images, _) = datasets.cifar10.load_data()
 train_images = train_images.astype('float32') / 255.0
@@ -14,11 +12,18 @@ test_images = test_images.astype('float32') / 255.0
 train_images = train_images[:50000]
 test_images = test_images[:10000]
 
+batch_size = 64
+epochs = 1
+lr_1 = 1e-3
+lr_2 = 1e-4
+
+
+
+
 # fasing channel
 slow_rayleigh_fading = True
 
-# train epoch
-epochs = 1
+
 # SNR[dB]
 SNR_list = [10]
 x_list = [8]
@@ -34,7 +39,13 @@ PP = 8**2
 # image dimension (source bandwidth)
 n = 32*32*3
 
+def lr_scheduler(epoch, lr):
+  iteration = epoch * (len(train_images) // batch_size)
+  if iteration >= 500000:
+    return lr_2
+  return lr
 
+lr_callback = tf.keras.callbacks.LearningRateScheduler(lr_scheduler)
 
 for i, SNR_dB in enumerate(SNR_list):
   # noise power
@@ -96,7 +107,7 @@ for i, SNR_dB in enumerate(SNR_list):
     else:
       file_name = f'model_AWGN_{SNR}dB_k_n{round(k_n, 2)}_x{x}_epoch{epochs}'
 
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=10**(-3)),
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=lr_1),
                   loss=tf.keras.losses.MSE,
                   metrics=[Metrics.PSNR])
     
@@ -104,14 +115,16 @@ for i, SNR_dB in enumerate(SNR_list):
     #os.makedirs(log_dir, exist_ok=True)
     csv_logger = callbacks.CSVLogger(f'{file_name}.log')
     # tensorboard_callback = callbacks.TensorBoard(log_dir='logs', histogram_freq=0)
-  
+    
+
+
 
     # train
     model.fit(train_images, train_images,
               validation_data=[test_images, test_images],
               epochs=epochs,
-              batch_size=64,
-              callbacks=[csv_logger]
+              batch_size=batch_size,
+              callbacks=[csv_logger, lr_callback]
               # callbacks=[tensorboard_callback]
               )
 
