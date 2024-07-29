@@ -34,7 +34,7 @@ org_img = org_img[:100]
 
 psnr_avg_list = []
 n = org_img[0].size
-k_n_list = []
+k_n_list = [0.04, 0.08, 0.16, 0.25, 0.33, 0.42, 0.48]
 SNR_dB = 10
 SNR = 10**(SNR_dB/10)
 C = np.log2(1+SNR)

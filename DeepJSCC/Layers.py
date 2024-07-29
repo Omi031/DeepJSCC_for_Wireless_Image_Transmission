@@ -27,7 +27,6 @@ class Normalization(layers.Layer):
     return cls(**config)
 
 
-
 class AWGN_Channel(layers.Layer):
   def __init__(self, N, **kwargs):
     super(AWGN_Channel, self).__init__()
@@ -38,34 +37,32 @@ class AWGN_Channel(layers.Layer):
       y = x + noise
     return y
   def get_config(self):
-        config = super(AWGN_Channel, self).get_config()
-        config.update({
-          'N': self.stddev
-        })
-        return config
+    config = super(AWGN_Channel, self).get_config()
+    config.update({
+      'N': self.stddev
+    })
+    return config
   @classmethod
   def from_config(cls, config):
     return cls(**config)
+
 
 class Slow_Rayleigh_Fading_Channel(layers.Layer):
   def __init__(self, **kwargs):
     super(Slow_Rayleigh_Fading_Channel, self).__init__()
   def random_normal(self, x_shape):
     random = tf.random.normal([x_shape[0], 1, 1, 1], mean=0.0, stddev=1.0, dtype=tf.float32)
-    random = tf.tile(random, [1, x_shape[1], x_shape[2], x_shape[3]])
+    random = tf.tile(random, [1, x_shape[1], x_shape[2], x_shape[3]//2])
     return random
   def call(self, x):
     with tf.name_scope('Slow_Rayleigh_Fading_Channel'):
-      x_shape = x.shape
-      if x_shape[0] == None:
-        y = x
-      else:
-        h_r = self.random_normal(x_shape)
-        h_i = self.random_normal(x_shape)
-        half = int(x.shape[3]/2)
-        x_f = tf.math.multiply(h_r, x[:,:,:,:half]) - tf.math.multiply(h_i, x[:,:,:,half:])
-        x_s = tf.math.multiply(h_i, x[:,:,:,:half]) + tf.math.multiply(h_r, x[:,:,:,half:])
-        y = tf.concat([x_f, x_s], axis=-1)
+      x_shape = tf.shape(x)
+      h_r = self.random_normal(x_shape)
+      h_i = self.random_normal(x_shape)
+      half = x.shape[3]//2
+      x_f = tf.math.multiply(h_r, x[:,:,:,:half]) - tf.math.multiply(h_i, x[:,:,:,half:])
+      x_s = tf.math.multiply(h_i, x[:,:,:,:half]) + tf.math.multiply(h_r, x[:,:,:,half:])
+      y = tf.concat([x_f, x_s], axis=-1)
     return y
   @classmethod
   def from_config(cls, config):
