@@ -26,7 +26,7 @@ slow_rayleigh_fading = True
 
 # SNR[dB]
 SNR_list = [10]
-x_list = [8]
+x_list = [4,8,16,24,32,40,48]
 
 times = len(SNR_list)*len(x_list)
 MSE = [[-1]*len(x_list) for i in range(len(SNR_list))]
@@ -47,9 +47,8 @@ def lr_scheduler(epoch, lr):
 
 lr_callback = tf.keras.callbacks.LearningRateScheduler(lr_scheduler)
 
-for i, SNR_dB in enumerate(SNR_list):
+for i, SNR in enumerate(SNR_list):
   # noise power
-  SNR = 10**(SNR_dB/10)
   N = P/10**(SNR/10)
   for j, x in enumerate(x_list):
     # bandwidth compression ratio
