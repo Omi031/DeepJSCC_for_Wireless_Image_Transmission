@@ -4,6 +4,23 @@ from tensorflow.keras.utils import plot_model
 import datetime,os
 import Layers, Metrics
 
+# fasing channel
+slow_rayleigh_fading = False
+
+if slow_rayleigh_fading:
+  ch = 'SRF'
+else:
+  ch = 'AWGN'
+
+results_dir = 'results'
+datetime = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+
+result_dir = os.path.join(results_dir, f'{ch}_{datetime}')
+
+
+
+os.makedirs(result_dir, exist_ok=True)
+
 # load data
 (train_images, _), (test_images, _) = datasets.cifar10.load_data()
 train_images = train_images.astype('float32') / 255.0
@@ -19,9 +36,6 @@ lr_2 = 1e-4
 
 
 
-
-# fasing channel
-slow_rayleigh_fading = True
 
 
 # SNR[dB]
@@ -50,6 +64,10 @@ lr_callback = tf.keras.callbacks.LearningRateScheduler(lr_scheduler)
 for i, SNR in enumerate(SNR_list):
   # noise power
   N = P/10**(SNR/10)
+  result_file = os.path.join(result_dir, f'{ch}_{SNR}dB_epoch{epochs}_{datetime}.txt')
+  with open(result_file, mode='a') as f:
+    f.write('k/n, MSE, PSNR')
+  
   for j, x in enumerate(x_list):
     # bandwidth compression ratio
     k_n = PP/(2*n)*x
@@ -100,11 +118,10 @@ for i, SNR in enumerate(SNR_list):
 
     # model.summary()
     # plot_model(model, show_shapes=True)
+    
 
-    if slow_rayleigh_fading == True:
-      file_name = f'model_SRayleigh_{SNR}dB_k_n{round(k_n, 2)}_x{x}_epoch{epochs}'
-    else:
-      file_name = f'model_AWGN_{SNR}dB_k_n{round(k_n, 2)}_x{x}_epoch{epochs}'
+    file_name = os.path.join(result_dir, f'{ch}_{SNR}dB_k_n{round(k_n, 2)}_epoch{epochs}_{datetime}')
+
 
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=lr_1),
                   loss=tf.keras.losses.MSE,
@@ -139,6 +156,10 @@ for i, SNR in enumerate(SNR_list):
     MSE[i][j] = float(mse / 10)
     PSNR[i][j] = float(psnr / 10)
     print(f'MSE:{MSE[i][j]}, PSNR:{PSNR[i][j]}')
+    
+    with open(result_file, mode='a') as f:
+      k_n = round(PP/(2*n)*x, 2)
+      f.write(f'\n{k_n}, {MSE[i][j]}, {PSNR[i][j]}')
 
 
 print('======result======')
@@ -160,4 +181,3 @@ for i, SNR in enumerate(SNR_list):
   print('PSNR')
   for P in PSNR[i]:
     print(P)
- 
