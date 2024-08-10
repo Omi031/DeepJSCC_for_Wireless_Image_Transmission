@@ -6,14 +6,10 @@ from tensorflow.keras import layers
 class Normalization(layers.Layer):
   def __init__(self, k, P, **kwargs):
     super(Normalization, self).__init__()
-    self.k = k*2
-    self.P = P
   def call(self, x):
-    x_shape = tf.shape(x)
-    A_x = tf.sqrt(tf.reduce_sum(tf.square(x), axis=[1,2,3], keepdims=True))
-    A_x = tf.broadcast_to(A_x, x_shape)
-    A_all = np.sqrt(self.k * self.P)
-    y = A_all*x/A_x
+    max = tf.math.reduce_max(x, axis=[1,2,3], keepdims=True)
+    min = tf.math.reduce_min(x, axis=[1,2,3], keepdims=True)
+    y = (x - min)/(max - min)
     return y
   def get_config(self):
     config = super(Normalization, self).get_config()
