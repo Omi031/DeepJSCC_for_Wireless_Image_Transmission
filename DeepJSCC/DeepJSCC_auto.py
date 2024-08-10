@@ -41,7 +41,7 @@ lr_2 = 1e-4
 # SNR[dB]
 SNR_list = [0, 10, 20]
 
-x_list = [4,8,16,24,32,40,48]
+x_list = [4,8,16,24,32,40,46]
 # x_list = [8,16,32,48,64,80,92]
 
 
@@ -119,7 +119,7 @@ for i, SNR in enumerate(SNR_list):
     model.add(layers.PReLU(name='Decoder_PReLU_4'))
     model.add(layers.Conv2DTranspose(3, (5, 5), strides=2, padding='same',  activation='sigmoid', name='Decoder_TransConv2D_5'))
 
-    # model.summary()
+    model.summary()
     # plot_model(model, show_shapes=True)
     
 

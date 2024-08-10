@@ -17,6 +17,31 @@
   DeepJSCCで再構成した画像の可視化
 
 ## DeepJSCC
+画像をCNNに入力し、その出力にノイズを付加して復元する。
+CNNの構造は以下に示す通り。
+<img src="fig/architecture.png" width="800">
+各レイヤーの上の数字$`F\times F\times K/S`$はそれぞれ、$`F`$：フィルタサイズ、$`K`$：フィルタ数、$`S`$：ストライドを表す。
+エンコーダの最後のConvolution層の$`c`$は帯域圧縮率$`k/n`$より
+$$\displaystyle c = \frac{2k}{F\times F}$$
+と求められる。
+$`k`$を2倍しているのは、信号をチャネルに入力する際にI相とQ相にそれぞれ乗せるため、2倍の情報を送ることができるためである。
+
+### normalization layer
+自作レイヤーはLayers.pyにて定義している。
+エンコーダ最終層のnormalization layerでは電力制約に基づいてConvolution層の出力を正規化する。
+論文によれば、Convolution層の出力を$`\tilde{\bm z}`$とすると、平均送信電力制約$`P`$で正規化された値$`\bm z`$は
+$$\displaystyle \bm z = \sqrt{kP}\frac{\tilde{\bm z}}{\tilde{\bm z}^*\tilde{\bm z}}$$
+と表される。ここで、$`\tilde{\bm z}^*`$は$`\tilde{\bm z}`$の複素共役転置行列である。
+実際には、Convolution層の出力は実数値で出力されるため、そのまま上式に代入するだけでは正しく正規化されない。
+そこで、本プログラムでは以下のように正規化する。
+$$\displaystyle \bm z = \sqrt{kP}\frac{\tilde{\bm z}}{\|\tilde{\bm z}\|}$$
+
+### AWGN channel layer
+入力に対してAWGNを付加して出力する。
+AWGN$`\bm n`$は
+$$\bm n\sim\mathcal{CN}(0, \sigma^2\bm I_k)$$
+に従う。実数に直すと、
+
 
 
 ## JPEG.py JPEG2000.py
