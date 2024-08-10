@@ -39,8 +39,11 @@ lr_2 = 1e-4
 
 
 # SNR[dB]
-SNR_list = [10]
+SNR_list = [0, 10, 20]
+
 x_list = [4,8,16,24,32,40,48]
+# x_list = [8,16,32,48,64,80,92]
+
 
 times = len(SNR_list)*len(x_list)
 MSE = [[-1]*len(x_list) for i in range(len(SNR_list))]
