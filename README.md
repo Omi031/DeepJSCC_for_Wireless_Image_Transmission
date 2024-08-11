@@ -43,7 +43,10 @@ $$\bm z = \tilde{\bm z}+\bm n$$
 $$\bm n\sim\mathcal{CN}(0, \sigma^2\bm I_k)$$
 に従う。$`\tilde{\bm z}\in\mathbb R^{2k}`$の場合
 $$\displaystyle\bm n\sim\mathcal N\left(0, \frac{\sigma^2}{2}\bm I_{2k}\right)$$
-となる。
+となる。ここで、$`\sigma^2`$はSNRから求められる。
+$${\rm SNR}=10\log_{10}\frac{P}{\sigma^2}\,(\rm dB)$$
+より
+
 
 
 ### Slow Rayleigh fading channel
