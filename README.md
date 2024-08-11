@@ -68,11 +68,17 @@ $$\displaystyle \sigma^2 = \frac{P}{10^{\frac{{\rm SNR}}{10}}}$$
 
 ### Slow Rayleigh fading channel
 Rayleigh fading channelは
+
 $$\boldsymbol z = h\tilde{\boldsymbol z}+\boldsymbol n$$
+
 と表される。ここで、$`h`$はフェージングを表し、$`\tilde{\boldsymbol z}\in\mathbb C^k`$の場合
+
 $$h\sim\mathcal{CN}(0,1)$$
+
 である。$`\tilde{\boldsymbol z}\in\mathbb R^{2k}`$の場合
+
 $$\displaystyle h\sim\mathcal N\left(0, \frac{1}{2}\right)$$
+
 である。
 今回はSlow Rayleigh fadingを想定しているため、各画像ごとにフェージングを無相関に変化させる。
 
