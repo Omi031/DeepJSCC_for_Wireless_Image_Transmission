@@ -36,13 +36,25 @@ $$\displaystyle \bm z = \sqrt{kP}\frac{\tilde{\bm z}}{\tilde{\bm z}^*\tilde{\bm 
 そこで、本プログラムでは以下のように正規化する。
 $$\displaystyle \bm z = \sqrt{kP}\frac{\tilde{\bm z}}{\|\tilde{\bm z}\|}$$
 
-### AWGN channel layer
-入力に対してAWGNを付加して出力する。
-AWGN$`\bm n`$は
+### AWGN channel
+AWGNを付加した信号は
+$$\bm z = \tilde{\bm z}+\bm n$$
+となる。ここで、$`\bm n`$はAWGNを表し、$`\tilde{\bm z}\in\mathbb C^k`$の場合
 $$\bm n\sim\mathcal{CN}(0, \sigma^2\bm I_k)$$
-に従う。実数に直すと、
+に従う。$`\tilde{\bm z}\in\mathbb R^{2k}`$の場合
+$$\displaystyle\bm n\sim\mathcal N\left(0, \frac{\sigma^2}{2}\bm I_{2k}\right)$$
+となる。
 
 
+### Slow Rayleigh fading channel
+Rayleigh fading channelは
+$$\bm z = h\tilde{\bm z}+\bm n$$
+と表される。ここで、$`h`$はフェージングを表し、$`\tilde{\bm z}\in\mathbb C^k`$の場合
+$$h\sim\mathcal{CN}(0,1)$$
+である。$`\tilde{\bm z}\in\mathbb R^{2k}`$の場合
+$$\displaystyle h\sim\mathcal N\left(0, \frac{1}{2}\right)$$
+である。
+今回はSlow Rayleigh fadingを想定しているため、各画像ごとにフェージングを無相関に変化させる。
 
 ## JPEG.py JPEG2000.py
 ### JPEG圧縮の考え方
