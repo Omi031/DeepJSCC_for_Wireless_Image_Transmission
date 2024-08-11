@@ -29,32 +29,32 @@ $`k`$を2倍しているのは、信号をチャネルに入力する際にI相�
 ### normalization layer
 自作レイヤーはLayers.pyにて定義している。
 エンコーダ最終層のnormalization layerでは電力制約に基づいてConvolution層の出力を正規化する。
-論文によれば、Convolution層の出力を$`\tilde{\bm z}`$とすると、平均送信電力制約$`P`$で正規化された値$`\bm z`$は
-$$\displaystyle \bm z = \sqrt{kP}\frac{\tilde{\bm z}}{\tilde{\bm z}^*\tilde{\bm z}}$$
-と表される。ここで、$`\tilde{\bm z}^*`$は$`\tilde{\bm z}`$の複素共役転置行列である。
+論文によれば、Convolution層の出力を$`\tilde{\boldsymbol z}`$とすると、平均送信電力制約$`P`$で正規化された値$`\boldsymbol z`$は
+$$\displaystyle \boldsymbol z = \sqrt{kP}\frac{\tilde{\boldsymbol z}}{\tilde{\boldsymbol z}^*\tilde{\boldsymbol z}}$$
+と表される。ここで、$`\tilde{\boldsymbol z}^*`$は$`\tilde{\boldsymbol z}`$の複素共役転置行列である。
 実際には、Convolution層の出力は実数値で出力されるため、そのまま上式に代入するだけでは正しく正規化されない。
 そこで、本プログラムでは以下のように正規化する。
-$$\displaystyle \bm z = \sqrt{kP}\frac{\tilde{\bm z}}{\|\tilde{\bm z}\|}$$
+$$\displaystyle \boldsymbol z = \sqrt{kP}\frac{\tilde{\boldsymbol z}}{\|\tilde{\boldsymbol z}\|}$$
 
 ### AWGN channel
 AWGNを付加した信号は
-$$\bm z = \tilde{\bm z}+\bm n$$
-となる。ここで、$`\bm n`$はAWGNを表し、$`\tilde{\bm z}\in\mathbb C^k`$の場合
-$$\bm n\sim\mathcal{CN}(0, \sigma^2\bm I_k)$$
-に従う。$`\tilde{\bm z}\in\mathbb R^{2k}`$の場合
-$$\displaystyle\bm n\sim\mathcal N\left(0, \frac{\sigma^2}{2}\bm I_{2k}\right)$$
+$$\boldsymbol z = \tilde{\boldsymbol z}+\boldsymbol n$$
+となる。ここで、$`\boldsymbol n`$はAWGNを表し、$`\tilde{\boldsymbol z}\in\mathbb C^k`$の場合
+$$\boldsymbol n\sim\mathcal{CN}(0, \sigma^2\boldsymbol I_k)$$
+に従う。$`\tilde{\boldsymbol z}\in\mathbb R^{2k}`$の場合
+$$\displaystyle\boldsymbol n\sim\mathcal N\left(0, \frac{\sigma^2}{2}\boldsymbol I_{2k}\right)$$
 となる。ここで、$`\sigma^2`$はSNRから求められる。
-$${\rm SNR}=10\log_{10}\frac{P}{\sigma^2}\,(\rm dB)$$
+$$\displaystyle{\rm SNR}=10\log_{10}\frac{P}{\sigma^2}\,(\rm dB)$$
 より
 
 
 
 ### Slow Rayleigh fading channel
 Rayleigh fading channelは
-$$\bm z = h\tilde{\bm z}+\bm n$$
-と表される。ここで、$`h`$はフェージングを表し、$`\tilde{\bm z}\in\mathbb C^k`$の場合
+$$\boldsymbol z = h\tilde{\boldsymbol z}+\boldsymbol n$$
+と表される。ここで、$`h`$はフェージングを表し、$`\tilde{\boldsymbol z}\in\mathbb C^k`$の場合
 $$h\sim\mathcal{CN}(0,1)$$
-である。$`\tilde{\bm z}\in\mathbb R^{2k}`$の場合
+である。$`\tilde{\boldsymbol z}\in\mathbb R^{2k}`$の場合
 $$\displaystyle h\sim\mathcal N\left(0, \frac{1}{2}\right)$$
 である。
 今回はSlow Rayleigh fadingを想定しているため、各画像ごとにフェージングを無相関に変化させる。
