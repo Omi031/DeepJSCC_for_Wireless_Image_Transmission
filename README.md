@@ -20,9 +20,12 @@
 画像をCNNに入力し、その出力にノイズを付加して復元する。
 CNNの構造は以下に示す通り。
 <img src="fig/architecture.png" width="800">
+
 各レイヤーの上の数字$`F\times F\times K/S`$はそれぞれ、$`F`$：フィルタサイズ、$`K`$：フィルタ数、$`S`$：ストライドを表す。
 エンコーダの最後のConvolution層の$`c`$は帯域圧縮率$`k/n`$より
+
 $$\displaystyle c = \frac{2k}{F\times F}$$
+
 と求められる。
 $`k`$を2倍しているのは、信号をチャネルに入力する際にI相とQ相にそれぞれ乗せるため、2倍の情報を送ることができるためである。
 
@@ -30,23 +33,37 @@ $`k`$を2倍しているのは、信号をチャネルに入力する際にI相�
 自作レイヤーはLayers.pyにて定義している。
 エンコーダ最終層のnormalization layerでは電力制約に基づいてConvolution層の出力を正規化する。
 論文によれば、Convolution層の出力を$`\tilde{\boldsymbol z}`$とすると、平均送信電力制約$`P`$で正規化された値$`\boldsymbol z`$は
+
 $$\displaystyle \boldsymbol z = \sqrt{kP}\frac{\tilde{\boldsymbol z}}{\tilde{\boldsymbol z}^*\tilde{\boldsymbol z}}$$
+
 と表される。ここで、$`\tilde{\boldsymbol z}^*`$は$`\tilde{\boldsymbol z}`$の複素共役転置行列である。
 実際には、Convolution層の出力は実数値で出力されるため、そのまま上式に代入するだけでは正しく正規化されない。
 そこで、本プログラムでは以下のように正規化する。
+
 $$\displaystyle \boldsymbol z = \sqrt{kP}\frac{\tilde{\boldsymbol z}}{\|\tilde{\boldsymbol z}\|}$$
 
 ### AWGN channel
 AWGNを付加した信号は
+
 $$\boldsymbol z = \tilde{\boldsymbol z}+\boldsymbol n$$
+
 となる。ここで、$`\boldsymbol n`$はAWGNを表し、$`\tilde{\boldsymbol z}\in\mathbb C^k`$の場合
+
 $$\boldsymbol n\sim\mathcal{CN}(0, \sigma^2\boldsymbol I_k)$$
+
 に従う。$`\tilde{\boldsymbol z}\in\mathbb R^{2k}`$の場合
+
 $$\displaystyle\boldsymbol n\sim\mathcal N\left(0, \frac{\sigma^2}{2}\boldsymbol I_{2k}\right)$$
-となる。ここで、$`\sigma^2`$はSNRから求められる。
+
+となる。なお、$`\sigma^2`$はSNRから求められる。
+
 $$\displaystyle{\rm SNR}=10\log_{10}\frac{P}{\sigma^2}\,(\rm dB)$$
+
 より
 
+$$\displaystyle \sigma^2 = \frac{P}{10^{\frac{{\rm SNR}}{10}}}$$
+
+となる。
 
 
 ### Slow Rayleigh fading channel
