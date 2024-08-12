@@ -72,27 +72,80 @@ class AWGN_Channel(layers.Layer):
   @classmethod
   def from_config(cls, config):
     return cls(**config)
+  
+# class Slow_Rayleigh_Fading_Channel(layers.Layer):
+#   def __init__(self, **kwargs):
+#     super(Slow_Rayleigh_Fading_Channel, self).__init__()
+#     self.stddevs = np.sqrt(0.5)
+#     idx_e = tf.constant([[[1,0]]], dtype=tf.float32)
+#     idx_o = tf.constant([[[0,1]]], dtype=tf.float32)
+#     self.idx_e = tf.expand_dims(idx_e, -1)
+#     self.idx_o = tf.expand_dims(idx_o, -1)
+#   def call(self, x):
+#     with tf.name_scope('Slow_Rayleigh_Fading_Channel'):
+#       x_shape = tf.shape(x)
+#       zeros = tf.zeros(shape=[x_shape[0], x_shape[1], 1, x_shape[3]])
+#       x_i = tf.concat([zeros, x], axis=2)
+#       x_q = tf.concat([x, zeros], axis=2)
+#       print(x_i.shape)
+      
+#       h_i = tf.random.normal(mean=0.0, stddev=self.stddevs, dtype=tf.float32)
+#       h_q = tf.random.normal(mean=0.0, stddev=self.stddevs, dtype=tf.float32)
 
+      
+
+#     return x
+#   @classmethod
+#   def from_config(cls, config):
+#     return cls(**config)
 
 class Slow_Rayleigh_Fading_Channel(layers.Layer):
   def __init__(self, **kwargs):
     super(Slow_Rayleigh_Fading_Channel, self).__init__()
     self.stddevs = np.sqrt(0.5)
+    idx_e = tf.constant([[[1,0]]], dtype=tf.float32)
+    idx_o = tf.constant([[[0,1]]], dtype=tf.float32)
+    self.idx_e = tf.expand_dims(idx_e, -1)
+    self.idx_o = tf.expand_dims(idx_o, -1)
   def call(self, x):
     with tf.name_scope('Slow_Rayleigh_Fading_Channel'):
       x_shape = tf.shape(x)
-      half = x_shape[3]//2
-      h_r = tf.random.normal([x_shape[0], 1, 1, 1], mean=0.0, stddev=self.stddevs, dtype=tf.float32)
+      idx_e = tf.tile(self.idx_e, [x_shape[0], x_shape[1], x_shape[2]//2, x_shape[3]])
+      idx_o = tf.tile(self.idx_o, [x_shape[0], x_shape[1], x_shape[2]//2, x_shape[3]])
+      x_i = x[:,:,0::2,:]
+      x_q = x[:,:,1::2,:]
       h_i = tf.random.normal([x_shape[0], 1, 1, 1], mean=0.0, stddev=self.stddevs, dtype=tf.float32)
-      h_r = tf.tile(h_r, [1, x_shape[1], x_shape[2], half])
-      h_i = tf.tile(h_i, [1, x_shape[1], x_shape[2], half])
-      x_f = tf.math.multiply(h_r, x[:,:,:,:half]) - tf.math.multiply(h_i, x[:,:,:,half:])
-      x_s = tf.math.multiply(h_i, x[:,:,:,:half]) + tf.math.multiply(h_r, x[:,:,:,half:])
-      y = tf.concat([x_f, x_s], axis=-1)
+      h_q = tf.random.normal([x_shape[0], 1, 1, 1], mean=0.0, stddev=self.stddevs, dtype=tf.float32)
+      y_i = h_i*x_i - h_q*x_q
+      y_q = h_q*x_i + h_i*x_q
+      y_i2 = tf.gather(y_i, [0,0,1,1,2,2,3,3], axis=2)
+      y_q2 = tf.gather(y_q, [0,0,1,1,2,2,3,3], axis=2)
+      y = y_i2*idx_e + y_q2*idx_o
+      
     return y
   @classmethod
   def from_config(cls, config):
     return cls(**config)
+
+# class Slow_Rayleigh_Fading_Channel(layers.Layer):
+#   def __init__(self, **kwargs):
+#     super(Slow_Rayleigh_Fading_Channel, self).__init__()
+#     self.stddevs = np.sqrt(0.5)
+#   def call(self, x):
+#     with tf.name_scope('Slow_Rayleigh_Fading_Channel'):
+#       x_shape = tf.shape(x)
+#       half = x_shape[3]//2
+#       h_r = tf.random.normal([x_shape[0], 1, 1, 1], mean=0.0, stddev=self.stddevs, dtype=tf.float32)
+#       h_i = tf.random.normal([x_shape[0], 1, 1, 1], mean=0.0, stddev=self.stddevs, dtype=tf.float32)
+#       h_r = tf.tile(h_r, [1, x_shape[1], x_shape[2], half])
+#       h_i = tf.tile(h_i, [1, x_shape[1], x_shape[2], half])
+#       x_f = tf.math.multiply(h_r, x[:,:,:,:half]) - tf.math.multiply(h_i, x[:,:,:,half:])
+#       x_s = tf.math.multiply(h_i, x[:,:,:,:half]) + tf.math.multiply(h_r, x[:,:,:,half:])
+#       y = tf.concat([x_f, x_s], axis=-1)
+#     return y
+#   @classmethod
+#   def from_config(cls, config):
+#     return cls(**config)
 
 # class Slow_Rayleigh_Fading_Channel(layers.Layer):
 #   def __init__(self, **kwargs):

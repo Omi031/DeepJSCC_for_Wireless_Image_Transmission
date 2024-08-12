@@ -5,7 +5,7 @@ import datetime,os
 import Layers, Metrics
 
 # fasing channel
-slow_rayleigh_fading = False
+slow_rayleigh_fading = True
 
 if slow_rayleigh_fading:
   ch = 'SRF'
@@ -119,7 +119,7 @@ for i, SNR in enumerate(SNR_list):
     model.add(layers.PReLU(name='Decoder_PReLU_4'))
     model.add(layers.Conv2DTranspose(3, (5, 5), strides=2, padding='same',  activation='sigmoid', name='Decoder_TransConv2D_5'))
 
-    model.summary()
+    # model.summary()
     # plot_model(model, show_shapes=True)
     
 
