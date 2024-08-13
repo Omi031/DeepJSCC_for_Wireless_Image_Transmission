@@ -14,11 +14,7 @@ else:
 
 results_dir = 'results'
 datetime = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-
 result_dir = os.path.join(results_dir, f'{ch}_{datetime}')
-
-
-
 os.makedirs(result_dir, exist_ok=True)
 
 # load data
@@ -31,27 +27,24 @@ test_images = test_images[:10000]
 
 batch_size = 64
 epochs = 1
+# Change learning rate to lr_2 from lr_1 after 500k iterations
 lr_1 = 1e-3
 lr_2 = 1e-4
-
-
-
-
 
 # SNR[dB]
 SNR_list = [0, 10, 20]
 
-x_list = [ 4,  8, 16, 24, 32, 40, 46]
-# x_list = [ 8, 16, 32, 48, 64, 80, 92]
+x_list = [ 4,  8, 16, 24, 32, 40, 46] # AWGN channel
+# x_list = [ 8, 16, 32, 48, 64, 80, 92] # Slow Rayleigh fading channel
 
 
 times = len(SNR_list)*len(x_list)
 MSE = [[-1]*len(x_list) for i in range(len(SNR_list))]
 PSNR = [[-1]*len(x_list) for i in range(len(SNR_list))]
 
-# average power
+# average power constraint
 P = 1
-# patch^2
+# number of pixels per feature map
 PP = 8**2
 # image dimension (source bandwidth)
 n = 32*32*3
@@ -79,7 +72,6 @@ for i, SNR in enumerate(SNR_list):
     # number of filters in the last convolution layer of the encoder
     c = int(2*k/PP)
 
-    print(f'{len(x_list)*i+j+1}/{times}：SNR={SNR}dB, k/n={round(k_n, 2)}')
     # DeepJSCC model
     model = models.Sequential(name='DeepJSCC')
     # encorder
@@ -102,11 +94,10 @@ for i, SNR in enumerate(SNR_list):
     # model.add(Layers.Modulation())
     # model.add(Layers.Demodulation())
 
-    # add channel noise (AWGN)
+    # add channel noise
     if slow_rayleigh_fading == True:
       model.add(Layers.Slow_Rayleigh_Fading_Channel())
     model.add(Layers.AWGN_Channel(N))
-    
 
     # encorder
     model.add(layers.Conv2DTranspose(32, (5, 5), strides=1, padding='same', name='Decoder_TransConv2D_1'))
@@ -135,10 +126,8 @@ for i, SNR in enumerate(SNR_list):
     csv_logger = callbacks.CSVLogger(f'{file_name}.log')
     # tensorboard_callback = callbacks.TensorBoard(log_dir='logs', histogram_freq=0)
     
-
-
-
     # train
+    print(f'{len(x_list)*i+j+1}/{times}：SNR={SNR}dB, k/n={round(k_n, 2)}')
     model.fit(train_images, train_images,
               validation_data=[test_images, test_images],
               epochs=epochs,
@@ -146,10 +135,10 @@ for i, SNR in enumerate(SNR_list):
               callbacks=[csv_logger, lr_callback]
               # callbacks=[tensorboard_callback]
               )
-
     
     model.save(f'{file_name}.keras')
 
+    print(f'{len(x_list)*i+j+1}/{times}：SNR={SNR}dB, k/n={round(k_n, 2)}')
     mse = 0
     psnr = 0
     for k in range(10):
