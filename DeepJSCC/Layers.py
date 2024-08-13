@@ -137,15 +137,16 @@ y   : output
 h   : fading coefficient
       h~CN(0,1)
 
-h_i : I component of h
+h_i : I components of h
       h_i~N(0,0.5)
-      
-h_q : Q component of h
+
+h_q : Q components of h
       h_q~N(0,0.5)
 '''
 class Slow_Rayleigh_Fading_Channel(layers.Layer):
   def __init__(self, **kwargs):
     super(Slow_Rayleigh_Fading_Channel, self).__init__()
+    # Fading variance is 1/2 because we consider real values (not complex)
     self.stddevs = np.sqrt(0.5)
     # Matrix for extracting even/odd columns of feature maps
     idx_e = tf.constant([[[1,0]]], dtype=tf.float32)
