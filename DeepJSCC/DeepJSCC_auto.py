@@ -3,6 +3,9 @@ from tensorflow.keras import datasets, layers, models, callbacks
 from tensorflow.keras.utils import plot_model
 import datetime,os
 import Layers, Metrics
+import numpy as np
+
+np.random.seed(42)
 
 # fasing channel
 slow_rayleigh_fading = True
@@ -21,7 +24,9 @@ os.makedirs(result_dir, exist_ok=True)
 (train_images, _), (test_images, _) = datasets.cifar10.load_data()
 train_images = train_images.astype('float32') / 255.0
 test_images = test_images.astype('float32') / 255.0
-
+# train_images = train_images.shuffle()
+np.random.shuffle(train_images)
+np.random.shuffle(test_images)
 train_images = train_images[:50000]
 test_images = test_images[:10000]
 

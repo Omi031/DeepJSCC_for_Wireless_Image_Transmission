@@ -147,7 +147,7 @@ class Slow_Rayleigh_Fading_Channel(layers.Layer):
   def __init__(self, **kwargs):
     super(Slow_Rayleigh_Fading_Channel, self).__init__()
     # Fading variance is 1/2 because we consider real values (not complex)
-    self.stddevs = np.sqrt(0.5)
+    self.stddevs = np.sqrt(1)
     # Matrix for extracting even/odd columns of feature maps
     idx_e = tf.constant([[[1,0]]], dtype=tf.float32)
     idx_o = tf.constant([[[0,1]]], dtype=tf.float32)
