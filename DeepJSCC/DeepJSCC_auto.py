@@ -126,8 +126,9 @@ for i, SNR in enumerate(SNR_list):
 
         # add channel noise
         if slow_rayleigh_fading == True:
-            model.add(Layers.Slow_Rayleigh_Fading_Channel())
-        model.add(Layers.AWGN_Channel(N))
+            model.add(Layers.Slow_Rayleigh_Fading_Channel(N))
+        else:
+            model.add(Layers.AWGN_Channel(N))
 
         # encorder
         model.add(

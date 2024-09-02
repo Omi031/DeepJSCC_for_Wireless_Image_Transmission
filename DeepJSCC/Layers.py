@@ -107,7 +107,7 @@ class Slow_Rayleigh_Fading_Channel(layers.Layer):
         # Slow Rayleigh fading
         # =====================
         # Fading variance is 1/2 because we consider real values (not complex)
-        self.stddev = np.sqrt(0.5)
+        self.stddevs = np.sqrt(0.5)
         # Matrix for extracting even/odd columns of feature maps
         idx_e = tf.constant([[[1, 0]]], dtype=tf.float32)
         idx_o = tf.constant([[[0, 1]]], dtype=tf.float32)
@@ -117,11 +117,16 @@ class Slow_Rayleigh_Fading_Channel(layers.Layer):
         # =====
         # AWGN
         # =====
-        self.stddev = np.sqrt(N)
+        self.stddev = np.sqrt(N / 2)
 
     def call(self, x):
         with tf.name_scope("Slow_Rayleigh_Fading_Channel"):
             x_shape = tf.shape(x)
+
+            # =====================
+            # Slow Rayleigh fading
+            # =====================
+
             # Matrix for extracting even/odd columns of feature maps
             idx_e = tf.tile(
                 self.idx_e, [x_shape[0], x_shape[1], x_shape[2] // 2, x_shape[3]]
@@ -146,7 +151,23 @@ class Slow_Rayleigh_Fading_Channel(layers.Layer):
             y_i2 = tf.gather(y_i, [0, 0, 1, 1, 2, 2, 3, 3], axis=2)
             y_q2 = tf.gather(y_q, [0, 0, 1, 1, 2, 2, 3, 3], axis=2)
             y = y_i2 * idx_e + y_q2 * idx_o
-        return y
+
+            # =====
+            # AWGN
+            # =====
+
+            y_norm = tf.sqrt(tf.reduce_sum(tf.square(x), axis=[1, 2, 3], keepdims=True))
+
+            # AWGN noise
+            noise = (
+                tf.random.normal(
+                    tf.shape(x), mean=0.0, stddev=self.stddev, dtype=tf.float32
+                )
+                * y_norm
+            )
+
+            z = y + noise
+        return z
 
     @classmethod
     def from_config(cls, config):
