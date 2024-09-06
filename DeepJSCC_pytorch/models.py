@@ -60,6 +60,17 @@ class Channel:
 
 
 class DeepJSCC(nn.Module):
-    def __init__(self):
+    def __init__(self, ch, k, N):
         super(DeepJSCC, self).__init__()
         self.encoder = Encoder()
+        self.decoder = Decoder()
+        if ch == "AWGN":
+            self.channel = Channel(k, N).awgn()
+        elif ch == "SRF":
+            self.channel = Channel(k, N).slow_raileigh_fading()
+
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.channel(x)
+        x = self.decoder(x)
+        return x

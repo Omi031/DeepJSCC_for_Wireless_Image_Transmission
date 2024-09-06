@@ -6,6 +6,10 @@ import numpy as np
 import datetime, os
 from dataloader import dataloader
 import argparse
+from models import DeepJSCC
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("channel")
@@ -47,5 +51,10 @@ k = PP * c / 2
 k_n = k / n
 
 # load data
-train_imgs = dataloader(train=True)
-test_imgs = dataloader(train=False)
+train_loader = dataloader(train=True)
+test_loader = dataloader(train=False)
+deepjscc = DeepJSCC().to(device)
+
+for epoch in range(epochs):
+    for i, (train_imgs, _) in enumerate(train_loader):
+        
