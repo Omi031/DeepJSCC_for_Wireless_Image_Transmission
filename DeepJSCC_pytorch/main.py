@@ -1,14 +1,17 @@
+import argparse
+import datetime
+import os
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import numpy as np
-import datetime, os
 from dataloader import dataloader
-import argparse
+from models import DeepJSCC
+from torch.optim import lr_scheduler
 from torchmetrics.image import PeakSignalNoiseRatio
 from tqdm.contrib import tenumerate
-from models import DeepJSCC
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -38,11 +41,6 @@ result_dir = os.path.join(results_dir, f"{ch}_{datetime}")
 os.makedirs(result_dir, exist_ok=True)
 
 
-epochs = 1
-lr_1 = 1e-3
-lr_2 = 1e-4
-
-
 # average power constraint
 P = 1
 N = P / 10 ** (SNR / 10)
@@ -56,10 +54,21 @@ k_n = k / n
 # load data
 train_loader = dataloader(train=True)
 test_loader = dataloader(train=False)
-deepjscc = DeepJSCC(ch, k, N, c).to(device)
+
+
+epochs = 1
+batch_size = 64
+lr_1 = 1e-3
+lr_2 = 1e-4
+gamma = lr_2 / lr_1
+iteration = 500000
+lr_epoch = iteration * batch_size // len(train_loader)
+
+deepjscc = DeepJSCC(ch, k, P, N, c).to(device)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(deepjscc.parameters(), lr=lr_1)
 PSNR = PeakSignalNoiseRatio(data_range=1.0)
+scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[lr_epoch], gamma=gamma)
 
 
 mse_list = []
@@ -75,7 +84,7 @@ for epoch in range(epochs):
         mse.backward()
         optimizer.step()
         train_batch_loss.append(mse.item())
-
+    scheduler.step()
     deepjscc.eval()
     test_batch_loss = []
     test_batch_metrics = []
@@ -92,3 +101,18 @@ for epoch in range(epochs):
     mse_list.append(mse_avg)
     psnr_list.append(psnr_avg)
     print(f"mse:{mse_avg}, psnr:{psnr_avg}")
+
+deepjscc.eval()
+with torch.no_grad():
+    for i, (x, _) in enumerate(test_loader):
+        x = x.to(device)
+        x_hat = deepjscc(x)
+        mse = criterion(x_hat, x)
+        psnr = PSNR(x_hat, x)
+        test_batch_loss.append(mse.item())
+        test_batch_metrics.append(psnr.item())
+mse_avg = np.mean(test_batch_loss)
+psnr_avg = np.mean(test_batch_metrics)
+mse_list.append(mse_avg)
+psnr_list.append(psnr_avg)
+print(f"[test]mse:{mse_avg}, psnr:{psnr_avg}")

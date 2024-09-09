@@ -63,6 +63,19 @@ class Decoder(nn.Module):
 #         return x
 
 
+class Normalization(nn.Module):
+    def __init__(self, k, P):
+        super(Normalization, self).__init__()
+        self.k = k
+        self.P = P
+
+    def forward(self, x):
+        x_norm = torch.sqrt(torch.sum(torch.square(x), dim=[1, 2, 3], keepdim=True))
+        p = np.sqrt(self.k * self.P)
+        x = p * x / x_norm
+        return x
+
+
 class AWGN(nn.Module):
     def __init__(self, k, N):
         super(AWGN, self).__init__()
@@ -76,10 +89,11 @@ class AWGN(nn.Module):
 
 
 class DeepJSCC(nn.Module):
-    def __init__(self, ch, k, N, c):
+    def __init__(self, ch, k, P, N, c):
         super(DeepJSCC, self).__init__()
         self.encoder = Encoder(c)
         self.decoder = Decoder(c)
+        self.norm = Normalization(k, P)
         if ch == "AWGN":
             self.channel = AWGN(k, N)
         elif ch == "SRF":
@@ -88,6 +102,7 @@ class DeepJSCC(nn.Module):
 
     def forward(self, x):
         x = self.encoder(x)
+        x = self.norm(x)
         x = self.channel(x)
         x = self.decoder(x)
         return x
