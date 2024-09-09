@@ -166,7 +166,7 @@ for i, SNR in enumerate(SNR_list):
             )
         )
 
-        # model.summary()
+        model.summary()
         # plot_model(model, show_shapes=True)
 
         file_name = os.path.join(
