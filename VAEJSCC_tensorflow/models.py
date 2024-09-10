@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import Model, callbacks, datasets, layers, models
+from dataclasses import dataclass
 
 
 class LossFunction:
@@ -22,7 +23,7 @@ class Encoder(layers.Layer):
     def __init__(self, z_dim):
         super(Encoder, self).__init__()
         self.conv1 = layers.Conv2D(16, (5, 5), strides=2, padding="same")
-        self.relu = layers.PReLU()
+        self.relu = layers.LeakyReLU()
         self.conv2 = layers.Conv2D(32, (5, 5), strides=2, padding="same")
         self.conv3 = layers.Conv2D(64, (5, 5), strides=1, padding="same")
         self.conv4 = layers.Conv2D(128, (5, 5), strides=1, padding="same")
@@ -83,13 +84,13 @@ class Decoder(layers.Layer):
     def __init__(self, z_dim):
         super(Decoder, self).__init__()
         self.dense1 = layers.Dense(8 * 8 * 128)
-        self.relu = layers.PReLU()
+        self.relu = layers.LeakyReLU()
         self.reshape = layers.Reshape(target_shape=(8, 8, 128))
-        self.deconv1 = layers.Conv2DTranspose(64, (5, 5), stride=1, padding="same")
-        self.deconv2 = layers.Conv2DTranspose(32, (5, 5), stride=1, padding="same")
-        self.devonc3 = layers.Conv2DTranspose(16, (5, 5), stride=1, padding="same")
+        self.deconv1 = layers.Conv2DTranspose(64, (5, 5), strides=1, padding="same")
+        self.deconv2 = layers.Conv2DTranspose(32, (5, 5), strides=1, padding="same")
+        self.deconv3 = layers.Conv2DTranspose(16, (5, 5), strides=2, padding="same")
         self.deconv4 = layers.Conv2DTranspose(
-            3, (5, 5), stride=1, padding="same", activation="sigmoid"
+            3, (5, 5), strides=2, padding="same", activation="sigmoid"
         )
 
     def call(self, x):
@@ -123,6 +124,32 @@ class VAE(Model):
         x_hat = self.decoder(z)
         return mean, logvar, z, x_hat
 
+    @tf.function
+    def train_step_function(self, x):
+        with tf.GradientTape() as tape:
+            mean, logvar, z, x_hat = self.call(x)
+            rc_loss, kl_loss, loss = self.loss_function(mean, logvar, z, x_hat, x)
+        grads = tape.gradient(loss, self.trainable_weights)
+        self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
+        return rc_loss, kl_loss, loss
+
+    def train_step(self, x):
+        rc_loss, kl_loss, loss = self.train_step_function(x)
+        return rc_loss, kl_loss, loss
+
+    def test_step(self, x):
+        mean, logvar, z, x_hat = self.call(x, train=False)
+        rc_loss, kl_loss, loss = self.loss_function(mean, logvar, z, x_hat, x)
+        return x_hat, rc_loss, kl_loss, loss
+
+    def predict(self, x):
+        x = tf.convert_to_tensor(x, dtype=tf.float32)
+        x = tf.expand_dims(x, axis=0)
+        mean, logvar, z, x_hat = self.call(x)
+        z = tf.squeeze(z, [0])
+        x_hat = tf.squeeze(x_hat, [0])
+        return z, x_hat
+
 
 # class VAE(tf.keras.Model):
 #     def __init__(self, z_dim):
@@ -149,14 +176,14 @@ class VAE(Model):
 #                 layers.Dense(8 * 8 * 128),
 #                 layers.PReLU(),
 #                 layers.Reshape(target_shape=(8, 8, 128)),
-#                 layers.Conv2DTranspose(64, (5, 5), stride=1, padding="same"),
+#                 layers.Conv2DTranspose(64, (5, 5), strides=1, padding="same"),
 #                 layers.PReLU(),
-#                 layers.Conv2DTranspose(32, (5, 5), stride=1, padding="same"),
+#                 layers.Conv2DTranspose(32, (5, 5), strides=1, padding="same"),
 #                 layers.PReLU(),
-#                 layers.Conv2DTranspose(16, (5, 5), stride=1, padding="same"),
+#                 layers.Conv2DTranspose(16, (5, 5), strides=1, padding="same"),
 #                 layers.PReLU(),
 #                 layers.Conv2DTranspose(
-#                     3, (5, 5), stride=1, padding="same", activation="sigmoid"
+#                     3, (5, 5), strides=1, padding="same", activation="sigmoid"
 #                 ),
 #             ]
 #         )

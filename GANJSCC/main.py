@@ -1,0 +1,188 @@
+import tensorflow as tf
+from tensorflow.keras import datasets, layers, models, callbacks, optimizers
+from tensorflow.keras.utils import plot_model
+import datetime, os
+from models import DeepJSCC, Discriminator
+import numpy as np
+
+np.random.seed(42)
+
+# fasing channel
+slow_rayleigh_fading = True
+
+if slow_rayleigh_fading:
+    ch = "SRF"
+else:
+    ch = "AWGN"
+
+results_dir = "results"
+datetime = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+result_dir = os.path.join(results_dir, f"{ch}_{datetime}")
+os.makedirs(result_dir, exist_ok=True)
+
+# load data
+(train_images, _), (test_images, _) = datasets.cifar10.load_data()
+train_images = (train_images - 127.5) / 127.5
+test_images = (test_images - 127.5) / 127.5
+# train_images = train_images.shuffle()
+train_dataset = (
+    tf.data.Dataset.from_tensor_slices(train_images).shuffle(50000).batch(64)
+)
+test_dataset = tf.data.Dataset.from_tensor_slices(test_images).batch(64)
+
+
+batch_size = 64
+epochs = 1
+# Change learning rate to lr_2 from lr_1 after 500k iterations
+lr_1 = 1e-3
+lr_2 = 1e-4
+
+# SNR[dB]
+SNR_list = [0, 10, 20]
+
+x_list = [4, 8, 16, 24, 32, 40, 46]  # AWGN channel
+# x_list = [ 8, 16, 32, 48, 64, 80, 92] # Slow Rayleigh fading channel
+
+
+times = len(SNR_list) * len(x_list)
+MSE = [[-1] * len(x_list) for i in range(len(SNR_list))]
+PSNR = [[-1] * len(x_list) for i in range(len(SNR_list))]
+
+
+def lr_scheduler(epoch, lr):
+    iteration = epoch * (len(train_images) // batch_size)
+    if iteration >= 500000:
+        return lr_2
+    return lr
+
+
+lr_callback = tf.keras.callbacks.LearningRateScheduler(lr_scheduler)
+
+cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+
+
+def dis_loss(real, fake):
+    real_loss = cross_entropy(tf.ones_like(real), real)
+    fake_loss = cross_entropy(tf.zeros_like(fake), fake)
+    loss = real_loss + fake_loss
+    return loss
+
+
+def deepjscc_loss(fake):
+    return cross_entropy(tf.ones_like(fake), fake)
+
+
+deepjscc_optim = optimizers.Adam(1e-3)
+dis_optim = optimizers.Adam(1e-3)
+
+
+SNR = 0
+c = 8
+ch = "AWGN"
+
+# average power constraint
+P = 1
+N = P / 10 ** (SNR / 10)
+# number of pixels per feature map
+PP = 8**2
+# image dimension (source bandwidth)
+n = 32 * 32 * 3
+k = PP * c / 2
+k_n = k / n
+
+epochs = 1
+
+deepjscc = DeepJSCC(c, k, P, N)
+discriminator = Discriminator()
+
+
+@tf.function
+def train_step(x):
+    with tf.GradientTape() as deepjscc_tape, tf.GradientTape() as dis_tape:
+        x_hat = deepjscc(x)
+
+
+for i, SNR in enumerate(SNR_list):
+    # noise power
+    N = P / 10 ** (SNR / 10)
+    result_file = os.path.join(result_dir, f"{ch}_{SNR}dB_epoch{epochs}_{datetime}.txt")
+    with open(result_file, mode="a") as f:
+        f.write("k/n, MSE, PSNR")
+
+    for j, x in enumerate(x_list):
+        # bandwidth compression ratio
+        k_n = PP / (2 * n) * x
+        # channel dimension (channel bandwidth)
+        k = int(n * k_n)
+        # number of filters in the last convolution layer of the encoder
+        c = int(2 * k / PP)
+
+        # DeepJSCC model
+
+        # model.summary()
+        # plot_model(model, show_shapes=True)
+
+        file_name = os.path.join(
+            result_dir, f"{ch}_{SNR}dB_k_n{round(k_n, 2)}_epoch{epochs}_{datetime}"
+        )
+
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=lr_1),
+            loss=tf.keras.losses.MSE,
+            metrics=[Metrics.PSNR],
+        )
+
+        # log_dir = "logs\\fit\\" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        # os.makedirs(log_dir, exist_ok=True)
+        csv_logger = callbacks.CSVLogger(f"{file_name}.log")
+        # tensorboard_callback = callbacks.TensorBoard(log_dir='logs', histogram_freq=0)
+
+        # train
+        print(f"{len(x_list)*i+j+1}/{times}：SNR={SNR}dB, k/n={round(k_n, 2)}")
+        model.fit(
+            train_images,
+            train_images,
+            validation_data=[test_images, test_images],
+            epochs=epochs,
+            batch_size=batch_size,
+            callbacks=[csv_logger, lr_callback],
+            # callbacks=[tensorboard_callback]
+        )
+
+        model.save(f"{file_name}.keras")
+
+        print(f"{len(x_list)*i+j+1}/{times}：SNR={SNR}dB, k/n={round(k_n, 2)}")
+        mse = 0
+        psnr = 0
+        for k in range(10):
+            m, p = model.evaluate(test_images, test_images, batch_size=64)
+            mse += m
+            psnr += p
+        MSE[i][j] = float(mse / 10)
+        PSNR[i][j] = float(psnr / 10)
+        print(f"MSE:{MSE[i][j]}, PSNR:{PSNR[i][j]}")
+
+        with open(result_file, mode="a") as f:
+            k_n = round(PP / (2 * n) * x, 2)
+            f.write(f"\n{k_n}, {MSE[i][j]}, {PSNR[i][j]}")
+
+
+print("======result======")
+for i, SNR in enumerate(SNR_list):
+    print()
+    print(f"SNR={SNR}dB")
+    print("k/n, MSE, PSNR")
+    for j, x in enumerate(x_list):
+        k_n = PP / (2 * n) * x
+        print(round(k_n, 2), MSE[i][j], PSNR[i][j])
+print("==================")
+
+for i, SNR in enumerate(SNR_list):
+    print()
+    print(f"SNR={SNR}dB")
+    print("MSE")
+    for M in MSE[i]:
+        print(M)
+    print("PSNR")
+    for P in PSNR[i]:
+        print(P)
