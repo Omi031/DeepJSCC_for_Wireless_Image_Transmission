@@ -47,13 +47,10 @@ class Sampling(layers.Layer):
     def __init__(self):
         super(Sampling, self).__init__()
 
-    def call(self, mean, logvar, train=True):
-        if self.train == True:
-            mean_shape = tf.shape(mean)
-            epsilon = tf.random.normal(shape=mean_shape)
-            z = mean + tf.exp(0.5 * logvar) * epsilon
-        else:
-            z = mean
+    def call(self, mean, logvar):
+        mean_shape = tf.shape(mean)
+        epsilon = tf.random.normal(shape=mean_shape)
+        z = mean + tf.exp(0.5 * logvar) * epsilon
         return z
 
 
@@ -118,7 +115,11 @@ class VAE(Model):
 
     def call(self, x, train=True):
         mean, logvar = self.encoder(x)
-        z = self.sampling(mean, logvar, train=train)
+        if train == True:
+            z = self.sampling(mean, logvar)
+
+        else:
+            z = mean
         x_hat = self.decoder(z)
         return mean, logvar, z, x_hat
 
