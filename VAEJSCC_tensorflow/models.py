@@ -4,6 +4,20 @@ from tensorflow import keras
 from tensorflow.keras import Model, callbacks, datasets, layers, models
 
 
+class LossFunction:
+    def __call__(self, mean, logvar, z, x_hat, x):
+        rc_loss = tf.reduce_mean(
+            tf.reduce_sum(keras.losses.binary_crossentropy(x, x_hat), axis=(1, 2))
+        )
+        kl_loss = tf.reduce_mean(
+            tf.reduce_sum(
+                -0.5 * (1 + logvar - tf.square(mean) - tf.exp(logvar)), axis=1
+            )
+        )
+        loss = rc_loss + kl_loss
+        return rc_loss, kl_loss, loss
+
+
 class Encoder(layers.Layer):
     def __init__(self, z_dim):
         super(Encoder, self).__init__()
@@ -30,10 +44,16 @@ class Encoder(layers.Layer):
 
 
 class Sampling(layers.Layer):
-    def call(self, mean, logvar):
-        mean_shape = tf.shape(mean)
-        epsilon = tf.random.normal(shape=mean_shape)
-        z = mean + tf.exp(0.5 * logvar) * epsilon
+    def __init__(self):
+        super(Sampling, self).__init__()
+
+    def call(self, mean, logvar, train=True):
+        if self.train == True:
+            mean_shape = tf.shape(mean)
+            epsilon = tf.random.normal(shape=mean_shape)
+            z = mean + tf.exp(0.5 * logvar) * epsilon
+        else:
+            z = mean
         return z
 
 
@@ -86,13 +106,21 @@ class Decoder(layers.Layer):
 
 
 class VAE(Model):
-    def __init__(self, z_dim, N, ch="AWGN"):
+    def __init__(self, z_dim, N, optimizer, ch="AWGN"):
         super(VAE, self).__init__()
         self.encoder = Encoder(z_dim)
         self.decoder = Decoder(z_dim)
         self.sampling = Sampling()
         if ch == "AWGN":
             self.channel = AWGN_Channel(N)
+        self.loss_function = LossFunction()
+        self.optimizer = optimizer
+
+    def call(self, x, train=True):
+        mean, logvar = self.encoder(x)
+        z = self.sampling(mean, logvar, train=train)
+        x_hat = self.decoder(z)
+        return mean, logvar, z, x_hat
 
 
 # class VAE(tf.keras.Model):
