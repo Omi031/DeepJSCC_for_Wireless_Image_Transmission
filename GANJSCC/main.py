@@ -61,7 +61,7 @@ lr_callback = tf.keras.callbacks.LearningRateScheduler(lr_scheduler)
 cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
 
-def dis_loss(real, fake):
+def discriminator_loss(real, fake):
     real_loss = cross_entropy(tf.ones_like(real), real)
     fake_loss = cross_entropy(tf.zeros_like(fake), fake)
     loss = real_loss + fake_loss
@@ -72,7 +72,7 @@ def deepjscc_loss(fake):
     return cross_entropy(tf.ones_like(fake), fake)
 
 
-deepjscc_optim = optimizers.Adam(1e-3)
+djscc_optim = optimizers.Adam(1e-3)
 dis_optim = optimizers.Adam(1e-3)
 
 
@@ -98,8 +98,26 @@ discriminator = Discriminator()
 
 @tf.function
 def train_step(x):
-    with tf.GradientTape() as deepjscc_tape, tf.GradientTape() as dis_tape:
-        x_hat = deepjscc(x)
+    with tf.GradientTape() as djscc_tape, tf.GradientTape() as dis_tape:
+        x_hat = deepjscc(x, training=True)
+
+        x_dis = discriminator(x, training=True)
+        x_hat_dis = discriminator(x_hat, training=True)
+
+        djscc_loss = deepjscc_loss(x_hat_dis)
+        dis_loss = discriminator_loss(x_dis, x_hat_dis)
+
+    djscc_grads = djscc_tape.gradient(djscc_loss, deepjscc.trainable_variables)
+    dis_grads = dis_tape.gradient(dis_loss, discriminator.trainable_variables)
+    djscc_optim.apply_gradients(zip(djscc_grads, deepjscc.trainable_variables))
+    dis_optim.apply_gradients(zip(dis_grads, discriminator.trainable_variables))
+    return x_hat, djscc_loss, dis_loss
+
+
+for epoch in range(epochs):
+
+    for x in train_dataset:
+        x_hat, djscc_loss, dis_loss = train_step(x)
 
 
 for i, SNR in enumerate(SNR_list):
