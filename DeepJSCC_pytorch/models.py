@@ -114,8 +114,9 @@ if __name__ == "__main__":
     PP = 8**2
     k = PP * c / 2
     N = 1
+    P = 1
     encoder = Encoder(c)
     decoder = Decoder(c)
     channel = AWGN(k, N)
-    deepjscc = DeepJSCC(ch, k, N, c)
+    deepjscc = DeepJSCC(ch, k, P, N, c)
     print(summary(model=deepjscc, input_size=(64, 3, 32, 32)))
