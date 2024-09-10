@@ -80,7 +80,7 @@ class AWGN(nn.Module):
     def __init__(self, k, N):
         super(AWGN, self).__init__()
         self.k = k
-        self.std = float(np.sqrt(N))
+        self.std = float(np.sqrt(N / 2))
 
     def forward(self, x):
         noise = torch.normal(mean=0, std=self.std, size=(x.size()))

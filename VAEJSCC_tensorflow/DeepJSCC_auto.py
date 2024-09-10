@@ -64,6 +64,9 @@ def lr_scheduler(epoch, lr):
 
 lr_callback = tf.keras.callbacks.LearningRateScheduler(lr_scheduler)
 
+
+
+
 for i, SNR in enumerate(SNR_list):
     # noise power
     N = P / 10 ** (SNR / 10)
@@ -89,40 +92,24 @@ for i, SNR in enumerate(SNR_list):
                 strides=2,
                 padding="same",
                 input_shape=(32, 32, 3),
-                name="Encoder_Conv2D_1",
             )
         )
-        model.add(layers.PReLU(name="Encoder_PReLU_1"))
+        model.add(layers.BatchNormalization)
+        model.add(layers.PReLU())
+        model.add(layers.Conv2D(32, (5, 5), strides=2, padding="same"))
+        model.add(layers.BatchNormalization)
+        model.add(layers.PReLU())
+        model.add(layers.Conv2D(64, (5, 5), strides=1, padding="same"))
+        model.add(layers.BatchNormalization)
+        model.add(layers.PReLU())
+        model.add(layers.Conv2D(128, (5, 5), strides=1, padding="same"))
+        model.add(layers.BatchNormalization)
+        model.add(layers.PReLU())
+        model.add(layers.Dense(4096))
+        model.add(layers.BathNormalization)
 
-        model.add(
-            layers.Conv2D(
-                32, (5, 5), strides=2, padding="same", name="Encoder_Conv2D_2"
-            )
-        )
-        model.add(layers.PReLU(name="Encoder_PReLU_2"))
-
-        model.add(
-            layers.Conv2D(
-                32, (5, 5), strides=1, padding="same", name="Encoder_Conv2D_3"
-            )
-        )
-        model.add(layers.PReLU(name="Encoder_PReLU_3"))
-
-        model.add(
-            layers.Conv2D(
-                32, (5, 5), strides=1, padding="same", name="Encoder_Conv2D_4"
-            )
-        )
-        model.add(layers.PReLU(name="Encoder_PReLU_4"))
-
-        model.add(
-            layers.Conv2D(c, (5, 5), strides=1, padding="same", name="Encoder_Conv2D_5")
-        )
-        model.add(layers.PReLU(name="Encoder_PReLU_5"))
 
         model.add(Layers.Normalization(k, P))
-        # model.add(Layers.Modulation())
-        # model.add(Layers.Demodulation())
 
         # add channel noise
         if slow_rayleigh_fading == True:
@@ -131,30 +118,14 @@ for i, SNR in enumerate(SNR_list):
             model.add(Layers.AWGN_Channel(N))
 
         # encorder
-        model.add(
-            layers.Conv2DTranspose(
-                32, (5, 5), strides=1, padding="same", name="Decoder_TransConv2D_1"
-            )
-        )
-        model.add(layers.PReLU(name="Decoder_PReLU_1"))
-        model.add(
-            layers.Conv2DTranspose(
-                32, (5, 5), strides=1, padding="same", name="Decoder_TransConv2D_2"
-            )
-        )
-        model.add(layers.PReLU(name="Decoder_PReLU_2"))
-        model.add(
-            layers.Conv2DTranspose(
-                32, (5, 5), strides=1, padding="same", name="Decoder_TransConv2D_3"
-            )
-        )
+        model.add(layers.Conv2DTranspose(32, (5, 5), strides=1, padding="same"))
+        model.add(layers.PReLU())
+        model.add(layers.Conv2DTranspose(32, (5, 5), strides=1, padding="same"))
+        model.add(layers.PReLU())
+        model.add(layers.Conv2DTranspose(32, (5, 5), strides=1, padding="same"))
         model.add(layers.PReLU(name="Decoder_PReLU_3"))
-        model.add(
-            layers.Conv2DTranspose(
-                16, (5, 5), strides=2, padding="same", name="Decoder_TransConv2D_4"
-            )
-        )
-        model.add(layers.PReLU(name="Decoder_PReLU_4"))
+        model.add(layers.Conv2DTranspose(16, (5, 5), strides=2, padding="same"))
+        model.add(layers.PReLU())
         model.add(
             layers.Conv2DTranspose(
                 3,
@@ -162,7 +133,6 @@ for i, SNR in enumerate(SNR_list):
                 strides=2,
                 padding="same",
                 activation="sigmoid",
-                name="Decoder_TransConv2D_5",
             )
         )
 
