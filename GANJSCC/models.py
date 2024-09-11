@@ -126,6 +126,56 @@ class Slow_Rayleigh_Fading_Channel(layers.Layer):
         return cls(**config)
 
 
+def deepjscc(c, k, P, N, slow_rayleigh_fading=False):
+    if slow_rayleigh_fading == True:
+        channel = Slow_Rayleigh_Fading_Channel(N)
+    else:
+        channel = AWGN_Channel(N)
+    model = models.Sequential(name="DeepJSCC")
+    # encorder
+    model.add(
+        layers.Conv2D(16, (5, 5), strides=2, padding="same", input_shape=(32, 32, 3))
+    )
+    model.add(layers.PReLU())
+
+    model.add(layers.Conv2D(32, (5, 5), strides=2, padding="same"))
+    model.add(layers.PReLU())
+
+    model.add(layers.Conv2D(32, (5, 5), strides=1, padding="same"))
+    model.add(layers.PReLU())
+
+    model.add(layers.Conv2D(32, (5, 5), strides=1, padding="same"))
+    model.add(layers.PReLU())
+
+    model.add(layers.Conv2D(c, (5, 5), strides=1, padding="same"))
+    model.add(layers.PReLU())
+
+    model.add(Normalization(k, P))
+
+    # add channel noise
+    model.add(channel())
+
+    # encorder
+    model.add(layers.Conv2DTranspose(32, (5, 5), strides=1, padding="same"))
+    model.add(layers.PReLU())
+    model.add(layers.Conv2DTranspose(32, (5, 5), strides=1, padding="same"))
+    model.add(layers.PReLU())
+    model.add(layers.Conv2DTranspose(32, (5, 5), strides=1, padding="same"))
+    model.add(layers.PReLU())
+    model.add(layers.Conv2DTranspose(16, (5, 5), strides=2, padding="same"))
+    model.add(layers.PReLU())
+    model.add(
+        layers.Conv2DTranspose(
+            3,
+            (5, 5),
+            strides=2,
+            padding="same",
+            activation="sigmoid",
+        )
+    )
+    return model
+
+
 class DeepJSCC:
     def __init__(self, c, k, P, N, slow_rayleigh_fading=False):
         super(DeepJSCC, self).__init__()
@@ -138,7 +188,7 @@ class DeepJSCC:
         else:
             self.channel = AWGN_Channel(N)
 
-    def __call__(self):
+    def model(self):
         model = models.Sequential(name="DeepJSCC")
         # encorder
         model.add(
@@ -190,16 +240,16 @@ class Discriminator:
     def __init__(self):
         super(Discriminator, self).__init__()
 
-    def __call__():
+    def __call__(self):
         model = models.Sequential(name="Discriminator")
 
-        model.add(layers.Conv2D(16, (5, 5), stride=1, padding="same"))
+        model.add(layers.Conv2D(16, (5, 5), strides=1, padding="same"))
         model.add(layers.PReLU())
-        model.add(layers.Conv2D(32, (5, 5), stride=2, padding="same"))
+        model.add(layers.Conv2D(32, (5, 5), strides=2, padding="same"))
         model.add(layers.PReLU())
-        model.add(layers.Conv2D(64, (5, 5), stride=2, padding="same"))
+        model.add(layers.Conv2D(64, (5, 5), strides=2, padding="same"))
         model.add(layers.PReLU())
-        model.add(layers.Conv2D(128, (5, 5), stride=2, padding="same"))
+        model.add(layers.Conv2D(128, (5, 5), strides=2, padding="same"))
         model.add(layers.PReLU())
         model.add(layers.Dense(512))
         model.add(layers.PReLU())

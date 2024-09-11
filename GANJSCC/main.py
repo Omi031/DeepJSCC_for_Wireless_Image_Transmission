@@ -2,8 +2,17 @@ import tensorflow as tf
 from tensorflow.keras import datasets, layers, models, callbacks, optimizers
 from tensorflow.keras.utils import plot_model
 import datetime, os
-from models import DeepJSCC, Discriminator
+from models import (
+    DeepJSCC,
+    Discriminator,
+    Slow_Rayleigh_Fading_Channel,
+    AWGN_Channel,
+    Normalization,
+)
 import numpy as np
+from tqdm import tqdm
+from metrics import PSNR, LPIPS, tf_tensor2pt_tensor
+
 
 np.random.seed(42)
 
@@ -24,29 +33,22 @@ os.makedirs(result_dir, exist_ok=True)
 (train_images, _), (test_images, _) = datasets.cifar10.load_data()
 train_images = (train_images - 127.5) / 127.5
 test_images = (test_images - 127.5) / 127.5
+train_images = train_images[:100]
+test_images = test_images[:100]
 # train_images = train_images.shuffle()
 train_dataset = (
-    tf.data.Dataset.from_tensor_slices(train_images).shuffle(50000).batch(64)
+    tf.data.Dataset.from_tensor_slices(train_images)
+    .shuffle(len(train_images))
+    .batch(64)
 )
 test_dataset = tf.data.Dataset.from_tensor_slices(test_images).batch(64)
 
 
 batch_size = 64
-epochs = 1
+
 # Change learning rate to lr_2 from lr_1 after 500k iterations
 lr_1 = 1e-3
 lr_2 = 1e-4
-
-# SNR[dB]
-SNR_list = [0, 10, 20]
-
-x_list = [4, 8, 16, 24, 32, 40, 46]  # AWGN channel
-# x_list = [ 8, 16, 32, 48, 64, 80, 92] # Slow Rayleigh fading channel
-
-
-times = len(SNR_list) * len(x_list)
-MSE = [[-1] * len(x_list) for i in range(len(SNR_list))]
-PSNR = [[-1] * len(x_list) for i in range(len(SNR_list))]
 
 
 def lr_scheduler(epoch, lr):
@@ -92,17 +94,87 @@ k_n = k / n
 
 epochs = 1
 
-deepjscc = DeepJSCC(c, k, P, N)
-discriminator = Discriminator()
+
+def deepjscc(c, k, P, N, slow_rayleigh_fading=False):
+    if slow_rayleigh_fading == True:
+        channel = Slow_Rayleigh_Fading_Channel(N)
+    else:
+        channel = AWGN_Channel(N)
+    model = models.Sequential(name="DeepJSCC")
+    # encorder
+    model.add(
+        layers.Conv2D(16, (5, 5), strides=2, padding="same", input_shape=(32, 32, 3))
+    )
+    model.add(layers.PReLU())
+
+    model.add(layers.Conv2D(32, (5, 5), strides=2, padding="same"))
+    model.add(layers.PReLU())
+
+    model.add(layers.Conv2D(32, (5, 5), strides=1, padding="same"))
+    model.add(layers.PReLU())
+
+    model.add(layers.Conv2D(32, (5, 5), strides=1, padding="same"))
+    model.add(layers.PReLU())
+
+    model.add(layers.Conv2D(c, (5, 5), strides=1, padding="same"))
+    model.add(layers.PReLU())
+
+    model.add(Normalization(k, P))
+
+    # add channel noise
+    model.add(channel)
+
+    # encorder
+    model.add(layers.Conv2DTranspose(32, (5, 5), strides=1, padding="same"))
+    model.add(layers.PReLU())
+    model.add(layers.Conv2DTranspose(32, (5, 5), strides=1, padding="same"))
+    model.add(layers.PReLU())
+    model.add(layers.Conv2DTranspose(32, (5, 5), strides=1, padding="same"))
+    model.add(layers.PReLU())
+    model.add(layers.Conv2DTranspose(16, (5, 5), strides=2, padding="same"))
+    model.add(layers.PReLU())
+    model.add(
+        layers.Conv2DTranspose(
+            3,
+            (5, 5),
+            strides=2,
+            padding="same",
+            activation="sigmoid",
+        )
+    )
+    return model
+
+
+def discriminator():
+    model = models.Sequential(name="Discriminator")
+
+    model.add(layers.Conv2D(16, (5, 5), strides=1, padding="same"))
+    model.add(layers.PReLU())
+    model.add(layers.Conv2D(32, (5, 5), strides=2, padding="same"))
+    model.add(layers.PReLU())
+    model.add(layers.Conv2D(64, (5, 5), strides=2, padding="same"))
+    model.add(layers.PReLU())
+    model.add(layers.Conv2D(128, (5, 5), strides=2, padding="same"))
+    model.add(layers.PReLU())
+    model.add(layers.Dense(512))
+    model.add(layers.PReLU())
+    model.add(layers.Dense(1))
+    model.add(layers.Activation("sigmoid"))
+    return model
+
+
+deepjscc = deepjscc(c, k, P, N)
+
+discriminator = discriminator()
 
 
 @tf.function
 def train_step(x):
     with tf.GradientTape() as djscc_tape, tf.GradientTape() as dis_tape:
-        x_hat = deepjscc(x, training=True)
+        x_hat = deepjscc(x)
 
-        x_dis = discriminator(x, training=True)
-        x_hat_dis = discriminator(x_hat, training=True)
+        x_dis = discriminator(x)
+        x_hat_dis = discriminator(x_hat)
 
         djscc_loss = deepjscc_loss(x_hat_dis)
         dis_loss = discriminator_loss(x_dis, x_hat_dis)
@@ -111,96 +183,59 @@ def train_step(x):
     dis_grads = dis_tape.gradient(dis_loss, discriminator.trainable_variables)
     djscc_optim.apply_gradients(zip(djscc_grads, deepjscc.trainable_variables))
     dis_optim.apply_gradients(zip(dis_grads, discriminator.trainable_variables))
-    return x_hat, djscc_loss, dis_loss
+    return djscc_loss, dis_loss
+
+
+psnr_fn = PSNR()
+lpips_fn = LPIPS(val=[0, 1])
+
+
+def test_step(x):
+    x_hat = deepjscc(x)
+    x_dis = discriminator(x)
+    x_hat_dis = discriminator(x_hat)
+    djscc_loss = deepjscc_loss(x_hat_dis)
+    dis_loss = discriminator_loss(x_dis, x_hat_dis)
+    psnr = tf.reduce_mean(psnr_fn(x, x_hat))
+    x = tf_tensor2pt_tensor(x)
+    x_hat = tf_tensor2pt_tensor(x_hat)
+    lpips = lpips_fn(x, x_hat).detach().numpy()
+    lpips = tf.reduce_mean(lpips)
+    return djscc_loss, dis_loss, psnr, lpips
 
 
 for epoch in range(epochs):
+    train_djscc_loss_batch = []
+    train_dis_loss_batch = []
+    test_djscc_loss_batch = []
+    test_dis_loss_batch = []
+    test_psnr_batch = []
+    test_lpips_batch = []
 
     for x in train_dataset:
-        x_hat, djscc_loss, dis_loss = train_step(x)
+        djscc_loss, dis_loss = train_step(x)
+        train_djscc_loss_batch.append(djscc_loss)
+        train_dis_loss_batch.append(dis_loss)
 
+    for x in test_dataset:
+        djscc_loss, dis_loss, psnr, lpips = test_step(x)
+        test_djscc_loss_batch.append(djscc_loss)
+        test_dis_loss_batch.append(dis_loss)
+        test_psnr_batch.append(psnr)
+        test_lpips_batch.append(lpips)
 
-for i, SNR in enumerate(SNR_list):
-    # noise power
-    N = P / 10 ** (SNR / 10)
-    result_file = os.path.join(result_dir, f"{ch}_{SNR}dB_epoch{epochs}_{datetime}.txt")
-    with open(result_file, mode="a") as f:
-        f.write("k/n, MSE, PSNR")
+    train_djscc_loss = np.mean(train_djscc_loss_batch)
+    train_dis_loss = np.mean(train_dis_loss_batch)
+    test_djscc_loss = np.mean(test_djscc_loss_batch)
+    test_dis_loss = np.mean(test_dis_loss_batch)
+    test_psnr = np.mean(test_psnr_batch)
+    test_lpips = np.mean(test_lpips_batch)
 
-    for j, x in enumerate(x_list):
-        # bandwidth compression ratio
-        k_n = PP / (2 * n) * x
-        # channel dimension (channel bandwidth)
-        k = int(n * k_n)
-        # number of filters in the last convolution layer of the encoder
-        c = int(2 * k / PP)
-
-        # DeepJSCC model
-
-        # model.summary()
-        # plot_model(model, show_shapes=True)
-
-        file_name = os.path.join(
-            result_dir, f"{ch}_{SNR}dB_k_n{round(k_n, 2)}_epoch{epochs}_{datetime}"
-        )
-
-        model.compile(
-            optimizer=tf.keras.optimizers.Adam(learning_rate=lr_1),
-            loss=tf.keras.losses.MSE,
-            metrics=[Metrics.PSNR],
-        )
-
-        # log_dir = "logs\\fit\\" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        # os.makedirs(log_dir, exist_ok=True)
-        csv_logger = callbacks.CSVLogger(f"{file_name}.log")
-        # tensorboard_callback = callbacks.TensorBoard(log_dir='logs', histogram_freq=0)
-
-        # train
-        print(f"{len(x_list)*i+j+1}/{times}：SNR={SNR}dB, k/n={round(k_n, 2)}")
-        model.fit(
-            train_images,
-            train_images,
-            validation_data=[test_images, test_images],
-            epochs=epochs,
-            batch_size=batch_size,
-            callbacks=[csv_logger, lr_callback],
-            # callbacks=[tensorboard_callback]
-        )
-
-        model.save(f"{file_name}.keras")
-
-        print(f"{len(x_list)*i+j+1}/{times}：SNR={SNR}dB, k/n={round(k_n, 2)}")
-        mse = 0
-        psnr = 0
-        for k in range(10):
-            m, p = model.evaluate(test_images, test_images, batch_size=64)
-            mse += m
-            psnr += p
-        MSE[i][j] = float(mse / 10)
-        PSNR[i][j] = float(psnr / 10)
-        print(f"MSE:{MSE[i][j]}, PSNR:{PSNR[i][j]}")
-
-        with open(result_file, mode="a") as f:
-            k_n = round(PP / (2 * n) * x, 2)
-            f.write(f"\n{k_n}, {MSE[i][j]}, {PSNR[i][j]}")
-
-
-print("======result======")
-for i, SNR in enumerate(SNR_list):
-    print()
-    print(f"SNR={SNR}dB")
-    print("k/n, MSE, PSNR")
-    for j, x in enumerate(x_list):
-        k_n = PP / (2 * n) * x
-        print(round(k_n, 2), MSE[i][j], PSNR[i][j])
-print("==================")
-
-for i, SNR in enumerate(SNR_list):
-    print()
-    print(f"SNR={SNR}dB")
-    print("MSE")
-    for M in MSE[i]:
-        print(M)
-    print("PSNR")
-    for P in PSNR[i]:
-        print(P)
+    print(
+        train_djscc_loss,
+        train_dis_loss,
+        test_djscc_loss,
+        test_dis_loss,
+        test_psnr,
+        test_lpips,
+    )
