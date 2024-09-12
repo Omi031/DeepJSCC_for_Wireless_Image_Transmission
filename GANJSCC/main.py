@@ -51,15 +51,6 @@ lr_1 = 1e-3
 lr_2 = 1e-4
 
 
-def lr_scheduler(epoch, lr):
-    iteration = epoch * (len(train_images) // batch_size)
-    if iteration >= 500000:
-        return lr_2
-    return lr
-
-
-lr_callback = tf.keras.callbacks.LearningRateScheduler(lr_scheduler)
-
 cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
 
@@ -92,6 +83,8 @@ n = 32 * 32 * 3
 k = PP * c / 2
 k_n = k / n
 
+z_dim = 2 * k
+
 epochs = 1
 
 
@@ -110,10 +103,10 @@ def deepjscc(c, k, P, N, slow_rayleigh_fading=False):
     model.add(layers.Conv2D(32, (5, 5), strides=2, padding="same"))
     model.add(layers.PReLU())
 
-    model.add(layers.Conv2D(32, (5, 5), strides=1, padding="same"))
+    model.add(layers.Conv2D(64, (5, 5), strides=2, padding="same"))
     model.add(layers.PReLU())
 
-    model.add(layers.Conv2D(32, (5, 5), strides=1, padding="same"))
+    model.add(layers.Conv2D(128, (5, 5), strides=2, padding="same"))
     model.add(layers.PReLU())
 
     model.add(layers.Conv2D(c, (5, 5), strides=1, padding="same"))
