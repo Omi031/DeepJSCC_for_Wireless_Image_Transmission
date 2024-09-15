@@ -166,7 +166,7 @@ for i, SNR in enumerate(SNR_list):
             )
         )
 
-        model.summary()
+        # model.summary()
         # plot_model(model, show_shapes=True)
 
         file_name = os.path.join(
@@ -176,7 +176,7 @@ for i, SNR in enumerate(SNR_list):
         model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=lr_1),
             loss=tf.keras.losses.MSE,
-            metrics=[Metrics.PSNR],
+            metrics=[Metrics.PSNR, Metrics.LPIPS(val_pre=[0, 1])],
         )
 
         # log_dir = "logs\\fit\\" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")

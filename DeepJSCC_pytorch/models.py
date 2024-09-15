@@ -31,12 +31,8 @@ class Decoder(nn.Module):
         self.deconv1 = nn.ConvTranspose2d(c, 32, 5, stride=1, padding=2)
         self.deconv2 = nn.ConvTranspose2d(32, 32, 5, stride=1, padding=2)
         self.deconv3 = nn.ConvTranspose2d(32, 32, 5, stride=1, padding=2)
-        self.deconv4 = nn.ConvTranspose2d(
-            32, 16, 5, stride=2, padding=2, output_padding=1
-        )
-        self.deconv5 = nn.ConvTranspose2d(
-            16, 3, 5, stride=2, padding=2, output_padding=1
-        )
+        self.deconv4 = nn.ConvTranspose2d(32, 16, 4, stride=2, padding=1)
+        self.deconv5 = nn.ConvTranspose2d(16, 3, 4, stride=2, padding=1)
         self.relu = nn.PReLU()
         self.sigmoid = nn.Sigmoid()
 

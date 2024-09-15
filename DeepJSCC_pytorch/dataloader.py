@@ -12,7 +12,7 @@ def dataloader(batch_size=64, train=True, root="data", subset=False):
         root=root, train=train, transform=transform, download=True
     )
     if subset == True:
-        subset_idx = list(range(64))
+        subset_idx = list(range(64 * 3))
         dataset = Subset(dataset, subset_idx)
 
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
