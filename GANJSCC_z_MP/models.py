@@ -84,7 +84,7 @@ class Encoder(layers.Layer):
 
 
 class Decoder(Model):
-    def __init__(self, z_dim):
+    def __init__(self):
         super(Decoder, self).__init__()
         self.dense1 = layers.Dense(4 * 4 * 128)
         self.reshape1 = layers.Reshape(target_shape=(4, 4, 128))
@@ -103,7 +103,7 @@ class Decoder(Model):
 
     def call(self, x):
         x = self.reshape1(self.dense1(x))
-        x = self.reshape(x)
+        x = self.reshape2(x)
         x = self.relu(self.deconv1(x))
         x = self.relu(self.deconv2(x))
         x = self.relu(self.deconv3(x))
@@ -140,7 +140,7 @@ class DeepJSCC(Model):
     def __init__(self, z_dim, k, P, N, ch="AWGN"):
         super(DeepJSCC, self).__init__()
         self.encoder = Encoder(z_dim)
-        self.decoder = Decoder(z_dim)
+        self.decoder = Decoder()
         self.normalization = Normalization(k, P)
         if ch == "AWGN":
             self.channel = AWGN_Channel(N)
@@ -155,10 +155,10 @@ class DeepJSCC(Model):
 
 if __name__ == "__main__":
     z_dim = 512
-    decoder = Decoder(z_dim)
-    decoder.build(input_shape=(None, z_dim))
-    decoder.call(tf.keras.Input(shape=(z_dim)))
-    decoder.summary()
+    # decoder = Decoder()
+    # decoder.build(input_shape=(None, z_dim))
+    # decoder.call(tf.keras.Input(shape=(z_dim)))
+    # decoder.summary()
 
     deepjscc = DeepJSCC(z_dim, z_dim / 2, 1, 1)
     deepjscc.build(input_shape=(None, 32, 32, 3))

@@ -4,11 +4,12 @@ from tensorflow.keras.utils import plot_model
 import datetime, os
 import Layers, Metrics
 import numpy as np
+from lpips_tensorflow import lpips_tf
 
 np.random.seed(42)
 
 # fasing channel
-slow_rayleigh_fading = True
+slow_rayleigh_fading = False
 
 if slow_rayleigh_fading:
     ch = "SRF"
@@ -46,6 +47,7 @@ x_list = [4, 8, 16, 24, 32, 40, 46]  # AWGN channel
 times = len(SNR_list) * len(x_list)
 MSE = [[-1] * len(x_list) for i in range(len(SNR_list))]
 PSNR = [[-1] * len(x_list) for i in range(len(SNR_list))]
+LPIPS = [[-1] * len(x_list) for i in range(len(SNR_list))]
 
 # average power constraint
 P = 1
@@ -176,7 +178,7 @@ for i, SNR in enumerate(SNR_list):
         model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=lr_1),
             loss=tf.keras.losses.MSE,
-            metrics=[Metrics.PSNR, Metrics.LPIPS(val_pre=[0, 1])],
+            metrics=[Metrics.PSNR],
         )
 
         # log_dir = "logs\\fit\\" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -201,27 +203,30 @@ for i, SNR in enumerate(SNR_list):
         print(f"{len(x_list)*i+j+1}/{times}：SNR={SNR}dB, k/n={round(k_n, 2)}")
         mse = 0
         psnr = 0
+        lpips = 0
         for k in range(10):
-            m, p = model.evaluate(test_images, test_images, batch_size=64)
+            m, p, l = model.evaluate(test_images, test_images, batch_size=64)
             mse += m
             psnr += p
+            lpips += l
         MSE[i][j] = float(mse / 10)
         PSNR[i][j] = float(psnr / 10)
-        print(f"MSE:{MSE[i][j]}, PSNR:{PSNR[i][j]}")
+        LPIPS[i][j] = float(lpips / 10)
+        print(f"MSE:{MSE[i][j]}, PSNR:{PSNR[i][j]}, LPIPS:{LPIPS[i][j]}")
 
         with open(result_file, mode="a") as f:
             k_n = round(PP / (2 * n) * x, 2)
-            f.write(f"\n{k_n}, {MSE[i][j]}, {PSNR[i][j]}")
+            f.write(f"\n{k_n}, {MSE[i][j]}, {PSNR[i][j]}, {LPIPS[i][j]}")
 
 
 print("======result======")
 for i, SNR in enumerate(SNR_list):
     print()
     print(f"SNR={SNR}dB")
-    print("k/n, MSE, PSNR")
+    print("k/n, MSE, PSNR, LPIPS")
     for j, x in enumerate(x_list):
         k_n = PP / (2 * n) * x
-        print(round(k_n, 2), MSE[i][j], PSNR[i][j])
+        print(round(k_n, 2), MSE[i][j], PSNR[i][j], LPIPS[i][j])
 print("==================")
 
 for i, SNR in enumerate(SNR_list):
@@ -233,3 +238,6 @@ for i, SNR in enumerate(SNR_list):
     print("PSNR")
     for P in PSNR[i]:
         print(P)
+    print("LPIPS")
+    for L in LPIPS[i]:
+        print(L)
