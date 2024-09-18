@@ -73,33 +73,33 @@ class Normalization(nn.Module):
 
 
 class AWGN(nn.Module):
-    def __init__(self, k, N):
+    def __init__(self, k):
         super(AWGN, self).__init__()
         self.k = k
-        self.std = float(np.sqrt(N / 2))
 
-    def forward(self, x):
-        noise = torch.normal(mean=0, std=self.std, size=(x.size()))
+    def forward(self, x, N):
+        std = float(np.sqrt(N / 2))
+        noise = torch.normal(mean=0, std=std, size=(x.size()))
         x = x + noise
         return x
 
 
 class DeepJSCC(nn.Module):
-    def __init__(self, ch, k, P, N, c):
+    def __init__(self, ch, k, P, c):
         super(DeepJSCC, self).__init__()
         self.encoder = Encoder(c)
         self.decoder = Decoder(c)
         self.norm = Normalization(k, P)
         if ch == "AWGN":
-            self.channel = AWGN(k, N)
+            self.channel = AWGN(k)
         elif ch == "SRF":
             # self.channel = Channel(k, N).slow_raileigh_fading()
             pass
 
-    def forward(self, x):
+    def forward(self, x, N):
         x = self.encoder(x)
         x = self.norm(x)
-        x = self.channel(x)
+        x = self.channel(x, N)
         x = self.decoder(x)
         return x
 

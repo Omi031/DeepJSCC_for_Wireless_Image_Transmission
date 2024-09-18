@@ -6,14 +6,17 @@ import torchvision.transforms as transforms
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def dataloader(batch_size=64, train=True, root="data", subset=False):
+def dataloader(batch_size=64, train=True, subset=False):
+    dataroot = "..\data"
     transform = transforms.Compose([transforms.ToTensor()])
     dataset = torchvision.datasets.CIFAR10(
-        root=root, train=train, transform=transform, download=True
+        root=dataroot, train=train, transform=transform, download=True
     )
+    subset_idx = list(range(10))
     if subset == True:
-        subset_idx = list(range(64 * 3))
         dataset = Subset(dataset, subset_idx)
-
-    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    if train == True:
+        data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    else:
+        data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
     return data_loader
