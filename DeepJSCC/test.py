@@ -17,8 +17,8 @@ test_images = test_images.astype("float32") / 255.0
 train_tensorflow = train_images[:2]
 test_tensorflow = test_images[:2]
 
-train_loader = dataloader(train=True, batch_size=2)
-test_loader = dataloader(train=False, batch_size=2)
+train_loader = dataloader(train=True, batch_size=1)
+test_loader = dataloader(train=False, batch_size=1)
 
 train_batch, _ = next(iter(train_loader))
 test_batch, _ = next(iter(test_loader))
@@ -26,10 +26,10 @@ train_pytorch = train_batch
 test_pytorch = test_batch
 
 # lpips_tensorflow = lpips_tf.lpips(train_tensorflow, test_tensorflow)
-# lpips_fn = lpips.LPIPS(net="vgg")
-# lpips_pytorch = lpips_fn(train_pytorch, test_pytorch)
+lpips_fn = lpips.LPIPS(net="vgg")
+lpips_pytorch = lpips_fn(train_pytorch, test_pytorch)
 # # print(tfds.as_numpy(lpips_tensorflow))
-# print(lpips_pytorch.item())
+print(lpips_pytorch.item())
 
 psnr_fn = PeakSignalNoiseRatio(data_range=1, reduction="none")
 
