@@ -11,7 +11,7 @@ from models import (
 )
 import numpy as np
 from tqdm import tqdm
-from metrics import CalculatePSNR, CalculateLPIPS
+from metrics import PSNR, LPIPS, tf_tensor2pt_tensor
 
 
 np.random.seed(42)
@@ -61,16 +61,12 @@ def discriminator_loss(real, fake):
     return loss
 
 
-def gan_loss(fake):
+def deepjscc_loss(fake):
     return cross_entropy(tf.ones_like(fake), fake)
 
 
-def mse_loss(x, x_hat):
-    return tf.keras.losses.MSE(x, x_hat)
-
-
-djscc_optim = optimizers.Adam(5e-4)
-dis_optim = optimizers.Adam(5e-4)
+djscc_optim = optimizers.Adam(1e-3)
+dis_optim = optimizers.Adam(1e-3)
 
 
 SNR = 0
@@ -98,7 +94,7 @@ def deepjscc(c, k, P, N, slow_rayleigh_fading=False):
     else:
         channel = AWGN_Channel(N)
     model = models.Sequential(name="DeepJSCC")
-    # encoder
+    # encorder
     model.add(
         layers.Conv2D(16, (5, 5), strides=2, padding="same", input_shape=(32, 32, 3))
     )
@@ -107,10 +103,10 @@ def deepjscc(c, k, P, N, slow_rayleigh_fading=False):
     model.add(layers.Conv2D(32, (5, 5), strides=2, padding="same"))
     model.add(layers.PReLU())
 
-    model.add(layers.Conv2D(32, (5, 5), strides=1, padding="same"))
+    model.add(layers.Conv2D(64, (5, 5), strides=2, padding="same"))
     model.add(layers.PReLU())
 
-    model.add(layers.Conv2D(32, (5, 5), strides=1, padding="same"))
+    model.add(layers.Conv2D(128, (5, 5), strides=2, padding="same"))
     model.add(layers.PReLU())
 
     model.add(layers.Conv2D(c, (5, 5), strides=1, padding="same"))
@@ -121,7 +117,7 @@ def deepjscc(c, k, P, N, slow_rayleigh_fading=False):
     # add channel noise
     model.add(channel)
 
-    # decoder
+    # encorder
     model.add(layers.Conv2DTranspose(32, (5, 5), strides=1, padding="same"))
     model.add(layers.PReLU())
     model.add(layers.Conv2DTranspose(32, (5, 5), strides=1, padding="same"))
@@ -145,8 +141,8 @@ def deepjscc(c, k, P, N, slow_rayleigh_fading=False):
 def discriminator():
     model = models.Sequential(name="Discriminator")
 
-    # model.add(layers.Conv2D(16, (5, 5), strides=1, padding="same"))
-    # model.add(layers.PReLU())
+    model.add(layers.Conv2D(16, (5, 5), strides=1, padding="same"))
+    model.add(layers.PReLU())
     model.add(layers.Conv2D(32, (5, 5), strides=2, padding="same"))
     model.add(layers.PReLU())
     model.add(layers.Conv2D(64, (5, 5), strides=2, padding="same"))
@@ -164,9 +160,6 @@ deepjscc = deepjscc(c, k, P, N)
 
 discriminator = discriminator()
 
-deepjscc.summary()
-discriminator.summary()
-
 
 @tf.function
 def train_step(x):
@@ -176,7 +169,7 @@ def train_step(x):
         x_dis = discriminator(x)
         x_hat_dis = discriminator(x_hat)
 
-        djscc_loss = gan_loss(x_hat_dis) + mse_loss(x, x_hat)
+        djscc_loss = deepjscc_loss(x_hat_dis)
         dis_loss = discriminator_loss(x_dis, x_hat_dis)
 
     djscc_grads = djscc_tape.gradient(djscc_loss, deepjscc.trainable_variables)
@@ -194,7 +187,7 @@ def test_step(x):
     x_hat = deepjscc(x)
     x_dis = discriminator(x)
     x_hat_dis = discriminator(x_hat)
-    djscc_loss = gan_loss(x_hat_dis) + mse_loss(x, x_hat)
+    djscc_loss = deepjscc_loss(x_hat_dis)
     dis_loss = discriminator_loss(x_dis, x_hat_dis)
     psnr = tf.reduce_mean(psnr_fn(x, x_hat))
     x = tf_tensor2pt_tensor(x)

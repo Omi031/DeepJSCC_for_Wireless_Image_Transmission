@@ -1,35 +1,40 @@
-import tensorflow as tf
 import lpips
-import torch
+import tensorflow as tf
+from lpips_tensorflow import lpips_tf
 
 
 # PSNR
-class PSNR:
+class CalculatePSNR:
+    def __init__(self, val=[0, 1]):
+        self.max_val = abs(val[1] - val[0])
 
-    def __call__(self, y_true, y_pred):
-        return tf.image.psnr(y_true, y_pred, max_val=1.0)
+    def __call__(self, x, x_hat):
+        return tf.image.psnr(x, x_hat, max_val=self.max_val)
 
 
 # LPIPS
-class LPIPS:
-    def __init__(self, net="vgg", val=[-1, 1]):
-        self.lpips_fn = lpips.LPIPS(net=net)
-        self.min = val[0]
-        self.max = val[1]
+class CalculateLPIPS:
+    def __init__(self, val=[-1, 1], net="vgg"):
+        self.net = net
+        self.val = val
+        self.val_new = [0, 1]
 
-    def __call__(self, true, pred):
+    def __call__(self, x, x_hat):
 
-        true = self.linear_conversion(true)
-        pred = self.linear_conversion(pred)
+        if self.val != self.val_new:
+            x = linear_conversion(x, self.val, self.val_new)
+            x_hat = linear_conversion(x_hat, self.val, self.val_new)
 
-        lpips = self.lpips_fn(true, pred)
-        return lpips
-
-    def linear_conversion(self, x):
-        return 2 * (x - self.min) / (self.max - self.min) - 1
+        return lpips_tf.lpips(x, x_hat, net=self.net)
 
 
-def tf_tensor2pt_tensor(x):
-    x = tf.transpose(x, perm=[0, 3, 1, 2])
-    x = torch.Tensor(x.numpy())
-    return x
+def linear_conversion(x, val_pre, val_new):
+    min_pre, max_pre = val_pre
+    min_new, max_new = val_new
+    return (x - min_pre) * (max_new - min_new) / (max_pre - min_pre) + min_new
+
+
+# def tf_tensor2pt_tensor(x):
+#     x = tf.transpose(x, perm=[0, 3, 1, 2])
+#     x = torch.Tensor(x.numpy())
+#     return x

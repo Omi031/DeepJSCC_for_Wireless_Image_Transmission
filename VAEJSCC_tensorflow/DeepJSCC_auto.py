@@ -65,8 +65,6 @@ def lr_scheduler(epoch, lr):
 lr_callback = tf.keras.callbacks.LearningRateScheduler(lr_scheduler)
 
 
-
-
 for i, SNR in enumerate(SNR_list):
     # noise power
     N = P / 10 ** (SNR / 10)
@@ -107,7 +105,6 @@ for i, SNR in enumerate(SNR_list):
         model.add(layers.PReLU())
         model.add(layers.Dense(4096))
         model.add(layers.BathNormalization)
-
 
         model.add(Layers.Normalization(k, P))
 
