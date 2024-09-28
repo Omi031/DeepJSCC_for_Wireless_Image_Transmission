@@ -7,7 +7,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 def dataloader(batch_size=64, train=True, subset=False):
-    dataroot = "..\data"
+    dataroot = "data"
     transform = transforms.Compose([transforms.ToTensor()])
     dataset = torchvision.datasets.CIFAR10(
         root=dataroot, train=train, transform=transform, download=True

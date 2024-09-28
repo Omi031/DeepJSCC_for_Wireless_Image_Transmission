@@ -10,10 +10,12 @@ import torch.optim as optim
 from dataloader import dataloader
 from models import DeepJSCC
 from torch.optim import lr_scheduler
-from metrics import CalculatePSNR, CalculateLPIPS
+from utils.metrics import CalculatePSNR, CalculateLPIPS
 from tqdm.contrib import tenumerate
 from tqdm import tqdm
-from utils import Logging, show_and_save, dB2linear
+from utils.utils import dB2linear
+from utils.log import Logging
+from utils.plot import show_and_save
 from torchvision.utils import make_grid
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
@@ -65,7 +67,7 @@ info_train = [
     "channel: %s" % ch,
     "SNR_train: %ddB" % SNR,
     "c: %d" % c,
-    "k/n: %.2f" % k_n,
+    "k/n: %f" % k_n,
     "note: left train, right, test",
 ]
 heads_train = ["epoch", "MSE", "PSNR", "LPIPS", "MSE", "PSNR", "LPIPS"]
@@ -78,7 +80,7 @@ info_test = [
     "channel: %s" % ch,
     "SNR_train: %ddB" % SNR,
     "c: %d" % c,
-    "k/n: %.2f" % k_n,
+    "k/n: %f" % k_n,
     "note: ",
 ]
 heads_test = ["SNR", "MSE", "PSNR", "LPIPS"]
@@ -105,8 +107,8 @@ optimizer = torch.optim.Adam(deepjscc.parameters(), lr=lr_1)
 scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[lr_epoch], gamma=gamma)
 
 # metrics
-calculate_psnr = CalculatePSNR(val_pre=[0, 1])
-calculate_lpips = CalculateLPIPS(val_pre=[0, 1])
+calculate_psnr = CalculatePSNR(val=[0, 1])
+calculate_lpips = CalculateLPIPS(val=[0, 1])
 
 test_vis = next(iter(test_loader))[0].to(device)
 
@@ -185,18 +187,16 @@ for epoch in tqdm(range(epochs), desc="Train"):
 
 torch.save(deepjscc.state_dict(), r".\%s\weight\deepjscc.pth" % result_dir)
 
-test_batch_loss = []
-test_batch_psnr = []
-test_batch_lpips = []
 
 deepjscc.eval()
 
 for i in tqdm(range(0, 21, 2), desc="Test"):
     SNR = i
     N = dB2linear(SNR, P)
-    mse_avg = 0
-    psnr_avg = 0
-    lpips_avg = 0
+    test_batch_loss = []
+    test_batch_psnr = []
+    test_batch_lpips = []
+    mse_list, psnr_list, lpips_list = [], [], []
     for i in range(10):
         with torch.no_grad():
             for i, (x, _) in tenumerate(test_loader):
@@ -204,16 +204,17 @@ for i in tqdm(range(0, 21, 2), desc="Test"):
                 x_hat = deepjscc(x, N)
                 mse = criterion(x_hat, x)
                 psnr = calculate_psnr(x, x_hat)
+                lpips = calculate_lpips(x, x_hat)
                 test_batch_loss.append(mse.item())
                 test_batch_psnr.append(psnr.item())
                 test_batch_lpips.append(lpips.item())
 
-        mse_avg += np.mean(test_batch_loss)
-        psnr_avg += np.mean(test_batch_psnr)
-        lpips_avg += np.mean(test_batch_lpips)
-    mse_test = mse_avg / 10
-    psnr_test = psnr_avg / 10
-    lpips_test = lpips_avg / 10
+        mse_list.append(np.mean(test_batch_loss))
+        psnr_list.append(np.mean(test_batch_psnr))
+        lpips_list.append(np.mean(test_batch_lpips))
+    mse_test = np.mean(mse_list)
+    psnr_test = np.mean(psnr_list)
+    lpips_test = np.mean(lpips_list)
     contents = [SNR, psnr_test, lpips_test]
     logging_test(contents)
     tqdm.write(format2 % tuple(contents))
