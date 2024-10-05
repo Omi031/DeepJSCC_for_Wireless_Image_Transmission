@@ -113,6 +113,6 @@ if __name__ == "__main__":
     P = 1
     encoder = Encoder(c)
     decoder = Decoder(c)
-    channel = AWGN(k, N)
-    deepjscc = DeepJSCC(ch, k, P, N, c)
-    print(summary(model=deepjscc, input_size=(64, 3, 32, 32)))
+    # channel = AWGN(k, N)
+    deepjscc = DeepJSCC(ch, k, P, c)
+    print(summary(model=deepjscc, input_size=(64, 3, 64, 64)))

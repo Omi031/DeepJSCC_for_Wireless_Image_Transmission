@@ -90,7 +90,7 @@ for i, SNR in enumerate(SNR_list):
                 (5, 5),
                 strides=2,
                 padding="same",
-                input_shape=(32, 32, 3),
+                input_shape=(64, 64, 3),
                 name="Encoder_Conv2D_1",
             )
         )
@@ -168,7 +168,7 @@ for i, SNR in enumerate(SNR_list):
             )
         )
 
-        # model.summary()
+        model.summary()
         # plot_model(model, show_shapes=True)
 
         file_name = os.path.join(
